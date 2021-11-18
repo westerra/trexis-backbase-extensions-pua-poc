@@ -1,3 +1,3 @@
-# Trexis Backbase Arrangement Extension
+# Trexis Backbase Extensions
 
-DBS arrangement extension to extend product summary to be aware of in-progress ingestions.
+Central location for all Trexis BackBase extensions.
