@@ -1,0 +1,117 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>net.trexis.experts</groupId>
+    <artifactId>arrangement-extension</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <name>Trexis :: Backbase :: Arrangement Extension</name>
+    <description>Extension for arrangement-manager that is intended to be overlaid on the BackBase build artifact.</description>
+
+    <properties>
+        <java.version>11</java.version>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <lombok.version>1.18.12</lombok.version>
+        <cursor-api.version>1.1.0-SNAPSHOT</cursor-api.version>
+        <boat.maven.plugin-version>0.14.4</boat.maven.plugin-version>
+        <dbs.version>2.20.5.1</dbs.version>
+        <service-sdk.version>13.1.0</service-sdk.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.backbase.dbs</groupId>
+                <artifactId>banking-services-bom</artifactId>
+                <version>${dbs.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.backbase.buildingblocks</groupId>
+                <artifactId>service-sdk-starter-core</artifactId>
+                <version>${service-sdk.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <!-- BACKBASE -->
+        <dependency>
+            <groupId>com.backbase.dbs.arrangement</groupId>
+            <artifactId>arrangement-manager</artifactId>
+            <classifier>classes</classifier>
+            <type>jar</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.backbase.buildingblocks</groupId>
+            <artifactId>service-sdk-starter-core</artifactId>
+            <type>pom</type>
+        </dependency>
+
+        <!--MISC-->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack-cursor-openapi-spec</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>net.trexis.experts</groupId>
+                                    <artifactId>cursor-api</artifactId>
+                                    <version>${cursor-api.version}</version>
+                                    <outputDirectory>${project.build.directory}/yaml/cursor/</outputDirectory>
+                                    <overWrite>true</overWrite>
+                                </artifactItem>
+                            </artifactItems>
+                            <includes>**/*.yaml, **/*.json</includes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>com.backbase.oss</groupId>
+                <artifactId>boat-maven-plugin</artifactId>
+                <version>${boat.maven.plugin-version}</version>
+                <executions>
+                    <!-- Generate OpenAPI interface stubs. -->
+                    <execution>
+                        <id>generate-cursor-service-api</id>
+                        <goals>
+                            <goal>generate-rest-template-embedded</goal>
+                        </goals>
+                        <phase>generate-sources</phase>
+                        <configuration>
+                            <inputSpec>
+                                ${basedir}/target/yaml/cursor/service-api-v1.yaml
+                            </inputSpec>
+                            <apiPackage>net.trexis.experts.cursor.cursor-service.api.client.v2</apiPackage>
+                            <modelPackage>net.trexis.experts.cursor.cursor-service.v2.model</modelPackage>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

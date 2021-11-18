@@ -8,6 +8,7 @@ import com.backbase.dbs.product.balance.BalanceService;
 import com.backbase.dbs.product.clients.AccessControlClient;
 import com.backbase.dbs.product.clients.JwtContext;
 import com.backbase.dbs.product.repository.ArrangementJpaRepository;
+import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import net.trexis.experts.cursor.cursor_service.api.client.v2.CursorApi;
 import net.trexis.experts.cursor.cursor_service.v2.model.Cursor;
@@ -29,7 +30,7 @@ public class ExtendProductSummaryService extends ProductSummaryService {
     private final SecurityContextUtil securityContextUtil;
     private final CursorApi cursorApi;
 
-    @Value("${arrangement-extension.product-summary.in-progress-cursor.time-wait-seconds:35}")
+    @Value("${arrangement-extension.product-summary.in-progress-cursor.time-wait-seconds:60}")
     private int inProgressCursorTimeWaitSeconds;
 
     @Value("${arrangement-extension.product-summary.in-progress-cursor.poll-interval-seconds:2}")
@@ -47,20 +48,30 @@ public class ExtendProductSummaryService extends ProductSummaryService {
         super(configurations, arrangementService, jwtContext, accessControlClient, arrangementRepository, balanceService);
         this.securityContextUtil = securityContextUtil;
         this.cursorApi = cursorApi;
-        log.info("Extended service for cursor-aware read arrangements has been created, configured time wait is {} seconds with a poll interval of {} seconds",
-                inProgressCursorTimeWaitSeconds, inProgressCursorPollIntervalSeconds);
+        log.info("Extended service for cursor-aware read arrangements has been created");
+    }
+
+    @PostConstruct
+    private void logConfigValues() {
+        log.info("Configured in progress cursor time wait: {} seconds",
+                inProgressCursorTimeWaitSeconds);
+        log.info("Configured in progress cursor poll interval: {} seconds",
+                inProgressCursorPollIntervalSeconds);
     }
 
     @Override
     public ProductSummary getProductSummary(ProductSummaryFilter filter) {
-        var entityId = securityContextUtil.getUserTokenClaim("member-account-number", String.class)
-                .orElseThrow(() -> new RuntimeException("Unable to identify entityId from token claims while getting product summary. Cannot check cursor status, failing."));
+        var entityId = securityContextUtil.getUserTokenClaim("sub", String.class)
+                .orElseThrow(() -> new RuntimeException("Failed to get sub claim for jwt claims while getting product summary. Cannot check cursor status, failing."));
 
+        log.info("Getting entity cursor by entityId: {}", entityId);
         var entityCursor = getEntityCursor(entityId);
+
         var ingestionStartDateTime = parse(entityCursor.getStartDateTime());
         var productSummaryCallStartDateTime = now();
 
         if (entityCursor.getStatus() != IN_PROGRESS) {
+            log.info("Ingestion not in progress, returning immediately.");
             return super.getProductSummary(filter);
         }
 
