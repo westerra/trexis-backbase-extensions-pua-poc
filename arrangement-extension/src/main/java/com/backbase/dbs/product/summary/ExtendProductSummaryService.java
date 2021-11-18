@@ -80,7 +80,7 @@ public class ExtendProductSummaryService extends ProductSummaryService {
 
             // Regardless if ingestion is still in progress, stop waiting after the configured time
             if (now().isAfter(ingestionStartDateTime.plusSeconds(inProgressCursorTimeWaitSeconds))) {
-                log.info("Ingestion still in progress, returning existing data as it has surpassed the configured wait time of {} seconds", inProgressCursorTimeWaitSeconds);
+                log.info("Reached maximum waiting time of {} seconds for ingestion to complete. Ingestion still in progress, returning existing data", inProgressCursorTimeWaitSeconds);
                 break;
             }
 
@@ -89,7 +89,7 @@ public class ExtendProductSummaryService extends ProductSummaryService {
                 // Multiply by 1000 for millis instead of seconds
                 sleep(1000L * inProgressCursorPollIntervalSeconds);
             } catch (InterruptedException e) {
-                log.error("Thread sleep while waiting for in progress cursor to succeed was interrupted! Swallowing exception and allowing while loop to continue.");
+                log.warn("Thread sleep while waiting for in progress cursor to succeed was interrupted! Swallowing exception and allowing while loop to continue.");
             }
 
             entityCursor = getEntityCursor(entityId);
