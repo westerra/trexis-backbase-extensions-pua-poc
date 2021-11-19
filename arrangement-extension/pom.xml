@@ -19,6 +19,15 @@
         <service-sdk.version>13.1.0</service-sdk.version>
     </properties>
 
+    <distributionManagement>
+        <repository>
+            <id>westerra-westerra</id>
+            <name>westerra-westerra</name>
+            <url>https://westerra-181741612687.d.codeartifact.us-east-2.amazonaws.com/maven/westerra/</url>
+        </repository>
+    </distributionManagement>
+
+
     <dependencyManagement>
         <dependencies>
             <dependency>
