@@ -1,4 +1,4 @@
-package com.backbase.dbs.product.summary;
+package com.backbase.dbs.product.summary.config;
 
 import com.backbase.buildingblocks.communication.client.ApiClientConfig;
 import net.trexis.experts.cursor.cursor_service.api.client.ApiClient;
@@ -10,11 +10,11 @@ import static com.backbase.buildingblocks.communication.http.HttpCommunicationCo
 import static java.lang.Boolean.TRUE;
 
 @Configuration
-public class CursorApiRestClientConfiguration extends ApiClientConfig {
+public class CursorApiRestClientConfig extends ApiClientConfig {
 
     public static final String SERVICE_ID = "cursor";
 
-    public CursorApiRestClientConfiguration() {
+    public CursorApiRestClientConfig() {
         super(SERVICE_ID);
     }
 
