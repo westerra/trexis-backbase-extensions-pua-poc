@@ -32,8 +32,6 @@ jobs:
         description: |
           Specify branch
         type: string
-      app_folder:
-        type: string
 
     docker:
       - image: 'cimg/openjdk:11.0'
@@ -63,9 +61,9 @@ jobs:
             echo 'export CODEARTIFACT_AUTH_TOKEN=$(aws codeartifact get-authorization-token --domain westerra --domain-owner 181741612687 --query authorizationToken --output text)' >> $BASH_ENV
 
       - run:
-          name: Deploy arrangement-extension
+          name: Deploy extensions
           command: |
-            mvn -s ~/.m2/settings.xml -f <<parameters.app_folder>>/pom.xml clean install deploy
+            mvn -s ~/.m2/settings.xml -f pom.xml clean install deploy
 
       - save_cache:
           key: 'maven-{{ checksum "/tmp/maven_cache_seed" }}'
@@ -81,28 +79,9 @@ workflows:
   deployment:
     jobs:
       - build-and-deploy-artifact:
-          name: build-and-deploy-artifact-for-arrangement-extension-for-develop-branch
+          name: build-and-deploy-artifact-for-extensions-for-develop-branch
           branch: develop
-          app_folder: arrangement-extension
           context: bb-aws-dev
-          filters:
-            branches:
-              only:
-                - develop
-
-      - approval-for-creating-pr-from-develop-to-main:
-          requires:
-            - build-and-deploy-artifact-for-arrangement-extension-for-develop-branch
-          type: approval
-          filters:
-            branches:
-              only:
-                - develop
-
-      - create-pr-from-develop-to-main:
-          requires:
-            - approval-for-creating-pr-from-develop-to-main
-          token: GITHUB_TOKEN
           filters:
             branches:
               only:

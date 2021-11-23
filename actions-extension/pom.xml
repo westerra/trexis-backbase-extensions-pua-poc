@@ -26,7 +26,7 @@
             <url>https://westerra-181741612687.d.codeartifact.us-east-2.amazonaws.com/maven/westerra/</url>
         </repository>
     </distributionManagement>
-    
+
     <dependencyManagement>
         <dependencies>
             <dependency>
