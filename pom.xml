@@ -17,6 +17,7 @@
     </properties>
 
     <modules>
+        <module>actions-extension</module>
         <module>arrangement-extension</module>
     </modules>
 </project>
