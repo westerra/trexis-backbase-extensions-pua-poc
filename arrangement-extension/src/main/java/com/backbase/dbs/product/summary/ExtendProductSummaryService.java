@@ -75,29 +75,29 @@ public class ExtendProductSummaryService extends ProductSummaryService {
 
     @Override
     public ProductSummary getProductSummary(ProductSummaryFilter filter) {
-        var entityId = securityContextUtil.getUserTokenClaim("sub", String.class)
+        var userExternalId = securityContextUtil.getUserTokenClaim("sub", String.class)
                 .orElseThrow(() -> new RuntimeException("Failed to get sub claim for jwt claims while getting product summary. Cannot check cursor status, failing."));
 
-        log.info("Getting entity cursor by entityId: {}", entityId);
-        var entityCursor = getEntityCursor(entityId);
+        log.info("Getting user cursor by userExternalId: {}", userExternalId);
+        var userCursor = getUserCursor(userExternalId);
 
-        var lastSuccess = ofNullable(entityCursor.getLastSuccessDateTime()).map(LocalDateTime::parse);
-        var ingestionStartDateTime = parse(entityCursor.getStartDateTime());
+        var lastSuccess = ofNullable(userCursor.getLastSuccessDateTime()).map(LocalDateTime::parse);
+        var ingestionStartDateTime = parse(userCursor.getStartDateTime());
         var productSummaryCallStartDateTime = now();
 
-        if (entityCursor.getStatus() != IN_PROGRESS) {
+        if (userCursor.getStatus() != IN_PROGRESS) {
             log.info("Ingestion not in progress, returning immediately.");
             return super.getProductSummary(filter);
         }
 
-        while (entityCursor.getStatus() == IN_PROGRESS) {
-            log.info("Ingestion is still in progress for entityId {}, started at {}", entityId, ingestionStartDateTime);
+        while (userCursor.getStatus() == IN_PROGRESS) {
+            log.info("Ingestion is still in progress for userExternalId {}, started at {}", userExternalId, ingestionStartDateTime);
 
             // Regardless if ingestion is still in progress, stop waiting after the configured time
             if (now().isAfter(ingestionStartDateTime.plusSeconds(productSummaryConfig.getTimeWaitSeconds()))) {
                 log.info("Reached maximum waiting time of {} seconds for ingestion to complete. Ingestion still in progress, returning existing data",
                         productSummaryConfig.getTimeWaitSeconds());
-                notifyUserOfIngestionInProgress(entityId, lastSuccess);
+                notifyUserOfIngestionInProgress(userExternalId, lastSuccess);
                 break;
             }
 
@@ -109,30 +109,30 @@ public class ExtendProductSummaryService extends ProductSummaryService {
                 log.warn("Thread sleep while waiting for in progress cursor to succeed was interrupted! Swallowing exception and allowing while loop to continue.");
             }
 
-            entityCursor = getEntityCursor(entityId);
+            userCursor = getUserCursor(userExternalId);
         }
 
         return super.getProductSummary(filter);
     }
 
-    private Cursor getEntityCursor(String entityId) {
-        var cursorResponse = cursorApi.getCursorWithHttpInfo(entityId, USER.toString(), null);
+    private Cursor getUserCursor(String userExternalId) {
+        var cursorResponse = cursorApi.getCursorWithHttpInfo(userExternalId, USER.toString(), null);
 
         if (!cursorResponse.getStatusCode().is2xxSuccessful()) {
-            log.error("Failed to get ENTITY cursor for entityId {} for getProductSummary. Status code: {}. Returning 500 error.", entityId, cursorResponse.getStatusCode());
+            log.error("Failed to get ENTITY cursor for userExternalId {} for getProductSummary. Status code: {}. Returning 500 error.", userExternalId, cursorResponse.getStatusCode());
             throw new InternalServerErrorException("Unable to retrieve ENTITY cursor!");
         }
 
         return cursorResponse.getBody().getCursor();
     }
 
-    private void notifyUserOfIngestionInProgress(String entityId, Optional<LocalDateTime> lastSuccessDateTime) {
+    private void notifyUserOfIngestionInProgress(String userExternalId, Optional<LocalDateTime> lastSuccessDateTime) {
 
         try {
-            var getUserResponse = userManagementApi.getUserByExternalIdWithHttpInfo(entityId, true);
+            var getUserResponse = userManagementApi.getUserByExternalIdWithHttpInfo(userExternalId, true);
             if (getUserResponse.getStatusCode().isError()) {
                 log.error("Exception while getting user by external id {} to notify user of ingestion still in progress timed out",
-                        entityId);
+                        userExternalId);
             }
 
             var internalLegalEntityId = getUserResponse.getBody().getLegalEntityId();
@@ -154,7 +154,7 @@ public class ExtendProductSummaryService extends ProductSummaryService {
             }
         } catch (RuntimeException ex) {
             log.error("Exception while notifying user with external id {} of ingestion still in progress timed out",
-                    entityId, ex);
+                    userExternalId, ex);
         }
     }
 }
