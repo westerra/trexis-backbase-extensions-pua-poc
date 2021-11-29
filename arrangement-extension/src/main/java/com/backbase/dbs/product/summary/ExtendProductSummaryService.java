@@ -32,7 +32,7 @@ import static java.time.LocalDateTime.now;
 import static java.time.LocalDateTime.parse;
 import static java.util.Optional.ofNullable;
 import static net.trexis.experts.cursor.cursor_service.v2.model.Cursor.StatusEnum.IN_PROGRESS;
-import static net.trexis.experts.cursor.cursor_service.v2.model.Cursor.TypeEnum.ENTITY;
+import static net.trexis.experts.cursor.cursor_service.v2.model.Cursor.TypeEnum.USER;
 
 @Slf4j
 @Primary
@@ -116,7 +116,7 @@ public class ExtendProductSummaryService extends ProductSummaryService {
     }
 
     private Cursor getEntityCursor(String entityId) {
-        var cursorResponse = cursorApi.getCursorWithHttpInfo(entityId, ENTITY.toString(), null);
+        var cursorResponse = cursorApi.getCursorWithHttpInfo(entityId, USER.toString(), null);
 
         if (!cursorResponse.getStatusCode().is2xxSuccessful()) {
             log.error("Failed to get ENTITY cursor for entityId {} for getProductSummary. Status code: {}. Returning 500 error.", entityId, cursorResponse.getStatusCode());
