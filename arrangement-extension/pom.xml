@@ -4,7 +4,7 @@
 
     <groupId>net.trexis.experts</groupId>
     <artifactId>arrangement-extension</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.1-SNAPSHOT</version>
     <name>Trexis :: Backbase :: Arrangement Extension</name>
     <description>Extension for arrangement-manager that is intended to be overlaid on the BackBase build artifact.</description>
 
