@@ -7,6 +7,7 @@ import com.backbase.dbs.notifications.notification_service.v2.model.LegalEntity;
 import com.backbase.dbs.notifications.notification_service.v2.model.NotificationsPostRequestBody;
 import com.backbase.dbs.notifications.notification_service.v2.model.Routing;
 import com.backbase.dbs.product.Configurations;
+import com.backbase.dbs.product.ProductKindStorage;
 import com.backbase.dbs.product.arrangement.ArrangementService;
 import com.backbase.dbs.product.balance.BalanceService;
 import com.backbase.dbs.product.clients.AccessControlClient;
@@ -14,10 +15,12 @@ import com.backbase.dbs.product.clients.JwtContext;
 import com.backbase.dbs.product.repository.ArrangementJpaRepository;
 import com.backbase.dbs.product.summary.config.ProductSummaryConfig;
 import com.backbase.dbs.user.api.client.v2.UserManagementApi;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.PostConstruct;
+
 import lombok.extern.slf4j.Slf4j;
 import net.trexis.experts.cursor.cursor_service.api.client.v2.CursorApi;
 import net.trexis.experts.cursor.cursor_service.v2.model.Cursor;
@@ -46,17 +49,18 @@ public class ExtendProductSummaryService extends ProductSummaryService {
     private final UserManagementApi userManagementApi;
 
     public ExtendProductSummaryService(Configurations configurations,
-            ArrangementService arrangementService,
-            JwtContext jwtContext,
-            AccessControlClient accessControlClient,
-            ArrangementJpaRepository arrangementRepository,
-            BalanceService balanceService,
-            SecurityContextUtil securityContextUtil,
-            CursorApi cursorApi,
-            ProductSummaryConfig productSummaryConfig,
-            NotificationsApi notificationsApi,
-            UserManagementApi userManagementApi) {
-        super(configurations, arrangementService, jwtContext, accessControlClient, arrangementRepository, balanceService);
+                                       ProductKindStorage productKindStorage,
+                                       ArrangementService arrangementService,
+                                       JwtContext jwtContext,
+                                       AccessControlClient accessControlClient,
+                                       ArrangementJpaRepository arrangementRepository,
+                                       BalanceService balanceService,
+                                       SecurityContextUtil securityContextUtil,
+                                       CursorApi cursorApi,
+                                       ProductSummaryConfig productSummaryConfig,
+                                       NotificationsApi notificationsApi,
+                                       UserManagementApi userManagementApi) {
+        super(configurations, productKindStorage, arrangementService, jwtContext, accessControlClient, arrangementRepository, balanceService);
         this.securityContextUtil = securityContextUtil;
         this.cursorApi = cursorApi;
         this.productSummaryConfig = productSummaryConfig;

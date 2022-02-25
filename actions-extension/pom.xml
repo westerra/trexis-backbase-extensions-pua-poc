@@ -4,7 +4,7 @@
 
     <groupId>net.trexis.experts</groupId>
     <artifactId>actions-extension</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.2-SNAPSHOT</version>
     <name>Trexis :: Backbase :: Actions Extension</name>
     <description>Extension for actions that is intended to be overlaid on the BackBase build artifact.</description>
 
@@ -12,18 +12,18 @@
         <java.version>11</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
-        <lombok.version>1.18.12</lombok.version>
-        <cursor-api.version>1.2.2-SNAPSHOT</cursor-api.version>
+        <lombok.version>1.18.22</lombok.version>
+        <cursor-api.version>1.2.0-SNAPSHOT</cursor-api.version>
         <boat.maven.plugin-version>0.14.4</boat.maven.plugin-version>
-        <dbs.version>2.20.5.1</dbs.version>
-        <service-sdk.version>13.1.0</service-sdk.version>
+        <dbs.version>2022.01-LTS</dbs.version>
+        <service-sdk.version>13.4.0</service-sdk.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>com.backbase.dbs</groupId>
-                <artifactId>banking-services-bom</artifactId>
+                <groupId>com.backbase</groupId>
+                <artifactId>backbase-bom</artifactId>
                 <version>${dbs.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
