@@ -4,7 +4,7 @@
 
     <groupId>net.trexis.experts</groupId>
     <artifactId>arrangement-extension</artifactId>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>1.0.2-SNAPSHOT</version>
     <name>Trexis :: Backbase :: Arrangement Extension</name>
     <description>Extension for arrangement-manager that is intended to be overlaid on the BackBase build artifact.</description>
 
@@ -15,8 +15,8 @@
         <lombok.version>1.18.12</lombok.version>
         <cursor-api.version>1.2.0-SNAPSHOT</cursor-api.version>
         <boat.maven.plugin-version>0.14.4</boat.maven.plugin-version>
-        <dbs.version>2.20.5.1</dbs.version>
-        <service-sdk.version>13.1.0</service-sdk.version>
+        <dbs.version>2022.01-LTS</dbs.version>
+        <service-sdk.version>13.4.0</service-sdk.version>
     </properties>
 
     <distributionManagement>
@@ -31,8 +31,8 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>com.backbase.dbs</groupId>
-                <artifactId>banking-services-bom</artifactId>
+                <groupId>com.backbase</groupId>
+                <artifactId>backbase-bom</artifactId>
                 <version>${dbs.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
@@ -148,7 +148,7 @@
                         <phase>generate-sources</phase>
                         <configuration>
                             <inputSpec>
-                                ${basedir}/target/yaml/notification/notification-service-api-v2.0.6.yaml
+                                ${basedir}/target/yaml/notification/notification-service-api-v2.0.7.yaml
                             </inputSpec>
                             <apiPackage>com.backbase.dbs.notifications.notification-service.api.client.v2</apiPackage>
                             <modelPackage>com.backbase.dbs.notifications.notification-service.v2.model</modelPackage>
