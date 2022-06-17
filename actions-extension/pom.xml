@@ -12,11 +12,18 @@
         <java.version>11</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
+
         <lombok.version>1.18.22</lombok.version>
-        <cursor-api.version>1.2.0-SNAPSHOT</cursor-api.version>
+
         <boat.maven.plugin-version>0.14.4</boat.maven.plugin-version>
         <dbs.version>2022.01-LTS</dbs.version>
         <service-sdk.version>13.4.0</service-sdk.version>
+
+        <!-- Code coverage -->
+        <jacoco-maven.version>0.8.8</jacoco-maven.version>
+        <jacoco.ut.execution.data.file>${project.build.directory}/coverage-reports/jacoco.exec</jacoco.ut.execution.data.file>
+        <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco-ut/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+
     </properties>
 
     <dependencyManagement>
@@ -59,5 +66,92 @@
             <version>${lombok.version}</version>
             <scope>compile</scope>
         </dependency>
+
+        <!-- Testing -->
+        <dependency>
+            <groupId>com.backbase.buildingblocks</groupId>
+            <artifactId>service-sdk-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <!-- CODE COVERAGE -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco-maven.version}</version>
+                <configuration>
+                    <excludes>
+                        <exclude>**/com/backbase/dbs/**/*</exclude>
+                        <exclude>**/net/trexis/experts/boot/Application.class</exclude>
+                        <exclude>**/net/trexis/experts/boot/configuration/*.class</exclude>
+                    </excludes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                        <configuration>
+                            <destFile>${jacoco.ut.execution.data.file}</destFile>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <dataFile>${jacoco.ut.execution.data.file}</dataFile>
+                            <rules>
+                                <rule>
+                                    <element>CLASS</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.00</minimum>
+                                        </limit>
+                                        <limit>
+                                            <counter>BRANCH</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.00</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <distributionManagement>
+        <repository>
+            <id>finiteapi-releases</id>
+            <name>libs-release</name>
+            <url>https://finiteapi.jfrog.io/artifactory/libs-release-local</url>
+        </repository>
+        <snapshotRepository>
+            <id>finiteapi-snapshots</id>
+            <name>libs-snapshots</name>
+            <url>https://finiteapi.jfrog.io/artifactory/libs-snapshots-local</url>
+        </snapshotRepository>
+    </distributionManagement>
 </project>
