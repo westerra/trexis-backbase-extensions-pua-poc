@@ -24,6 +24,7 @@ import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import net.trexis.experts.cursor.cursor_service.api.client.v2.CursorApi;
 import net.trexis.experts.cursor.cursor_service.v2.model.Cursor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
@@ -35,6 +36,7 @@ import static java.time.LocalDateTime.now;
 import static java.time.LocalDateTime.parse;
 import static java.util.Optional.ofNullable;
 import static net.trexis.experts.cursor.cursor_service.v2.model.Cursor.StatusEnum.IN_PROGRESS;
+import static net.trexis.experts.cursor.cursor_service.v2.model.Cursor.TypeEnum.LEGAL_ENTITY;
 import static net.trexis.experts.cursor.cursor_service.v2.model.Cursor.TypeEnum.USER;
 
 @Slf4j
@@ -49,17 +51,17 @@ public class ExtendProductSummaryService extends ProductSummaryService {
     private final UserManagementApi userManagementApi;
 
     public ExtendProductSummaryService(Configurations configurations,
-                                       ProductKindStorage productKindStorage,
-                                       ArrangementService arrangementService,
-                                       JwtContext jwtContext,
-                                       AccessControlClient accessControlClient,
-                                       ArrangementJpaRepository arrangementRepository,
-                                       BalanceService balanceService,
-                                       SecurityContextUtil securityContextUtil,
-                                       CursorApi cursorApi,
-                                       ProductSummaryConfig productSummaryConfig,
-                                       NotificationsApi notificationsApi,
-                                       UserManagementApi userManagementApi) {
+            ProductKindStorage productKindStorage,
+            ArrangementService arrangementService,
+            JwtContext jwtContext,
+            AccessControlClient accessControlClient,
+            ArrangementJpaRepository arrangementRepository,
+            BalanceService balanceService,
+            SecurityContextUtil securityContextUtil,
+            CursorApi cursorApi,
+            ProductSummaryConfig productSummaryConfig,
+            NotificationsApi notificationsApi,
+            UserManagementApi userManagementApi) {
         super(configurations, productKindStorage, arrangementService, jwtContext, accessControlClient, arrangementRepository, balanceService);
         this.securityContextUtil = securityContextUtil;
         this.cursorApi = cursorApi;
@@ -83,11 +85,20 @@ public class ExtendProductSummaryService extends ProductSummaryService {
                 .orElseThrow(() -> new RuntimeException("Failed to get sub claim for jwt claims while getting product summary. Cannot check cursor status, failing."));
 
         log.info("Getting user cursor by userExternalId: {}", userExternalId);
-        var userCursor = getUserCursor(userExternalId);
+        Cursor userCursor;
+        try {
+            userCursor = getUserCursor(userExternalId);
+        } catch (InternalServerErrorException e) {
+            if (productSummaryConfig.isContinueAfterFailedCursorCheck()) {
+                log.warn("Failed to get user cursor, but returning regardless due to configuration continue-after-failed-cursor-check");
+                return super.getProductSummary(filter);
+            }
+            log.error("Failed to get user cursor, erroring due to configuration continue-after-failed-cursor-check", e);
+            throw e;
+        }
 
         var lastSuccess = ofNullable(userCursor.getLastSuccessDateTime()).map(LocalDateTime::parse);
         var ingestionStartDateTime = parse(userCursor.getStartDateTime());
-        var productSummaryCallStartDateTime = now();
 
         if (userCursor.getStatus() != IN_PROGRESS) {
             log.info("Ingestion not in progress, returning immediately.");
@@ -101,7 +112,9 @@ public class ExtendProductSummaryService extends ProductSummaryService {
             if (now().isAfter(ingestionStartDateTime.plusSeconds(productSummaryConfig.getTimeWaitSeconds()))) {
                 log.info("Reached maximum waiting time of {} seconds for ingestion to complete. Ingestion still in progress, returning existing data",
                         productSummaryConfig.getTimeWaitSeconds());
-                notifyUserOfIngestionInProgress(userExternalId, lastSuccess);
+                if (productSummaryConfig.isNotificationEnabled()) {
+                    notifyUserOfIngestionInProgress(userExternalId, lastSuccess);
+                }
                 break;
             }
 
@@ -123,8 +136,9 @@ public class ExtendProductSummaryService extends ProductSummaryService {
         var cursorResponse = cursorApi.getCursorWithHttpInfo(userExternalId, USER.toString(), null);
 
         if (!cursorResponse.getStatusCode().is2xxSuccessful()) {
-            log.error("Failed to get ENTITY cursor for userExternalId {} for getProductSummary. Status code: {}. Returning 500 error.", userExternalId, cursorResponse.getStatusCode());
-            throw new InternalServerErrorException("Unable to retrieve ENTITY cursor!");
+            log.error("Failed to get USER cursor for userExternalId {} for getProductSummary. Status code: {}. Returning 500 error.", userExternalId,
+                    cursorResponse.getStatusCode());
+            throw new InternalServerErrorException("Unable to retrieve USER cursor!");
         }
 
         return cursorResponse.getBody().getCursor();
@@ -135,7 +149,7 @@ public class ExtendProductSummaryService extends ProductSummaryService {
         try {
             var getUserResponse = userManagementApi.getUserByExternalIdWithHttpInfo(userExternalId, true);
             if (getUserResponse.getStatusCode().isError()) {
-                log.error("Exception while getting user by external id {} to notify user of ingestion still in progress timed out",
+                log.error("Exception while getting user by entity external id {} to notify user of ingestion still in progress timed out",
                         userExternalId);
             }
 
@@ -157,8 +171,8 @@ public class ExtendProductSummaryService extends ProductSummaryService {
                         internalLegalEntityId);
             }
         } catch (RuntimeException ex) {
-            log.error("Exception while notifying user with external id {} of ingestion still in progress timed out",
-                    userExternalId, ex);
+            log.error(String.format("Exception while notifying user with external id %s of ingestion still in progress timed out",
+                    userExternalId), ex);
         }
     }
 }

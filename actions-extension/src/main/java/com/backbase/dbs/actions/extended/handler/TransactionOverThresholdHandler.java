@@ -7,15 +7,17 @@ import com.backbase.dbs.actions.business.core.model.ActionRecipe;
 import com.backbase.dbs.actions.eventhandling.event.InterpretedEvent;
 import com.backbase.transaction.persistence.event.spec.v1.Transaction_;
 import com.backbase.transaction.persistence.event.spec.v1.TransactionsAddedEvent;
-import java.math.BigDecimal;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.context.ApplicationEventPublisher;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
 
 import static com.backbase.dbs.actions.business.core.persistence.specification.ActionRecipeJpaQueries.amountLessThanOrEqual;
 import static com.backbase.dbs.actions.business.core.persistence.specification.ActionRecipeJpaQueries.eqArrangement;
-import static org.springframework.util.StringUtils.isEmpty;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -49,14 +51,19 @@ public class TransactionOverThresholdHandler implements EventHandler<Transaction
                     }
                     log.info("arrangementId: {}", txn.getArrangementId());
                     log.info("billingStatus: {}", txn.getBillingStatus());
-                }).filter(txn -> txn.getTransactionAmountCurrency() != null && txn.getTransactionAmountCurrency().getAmount() != null && !isEmpty(txn.getArrangementId()) &&
+                }).filter(txn -> txn.getTransactionAmountCurrency() != null && txn.getTransactionAmountCurrency().getAmount() != null && !StringUtils.isEmpty(txn.getArrangementId()) &&
                 !"pending".equalsIgnoreCase(txn.getBillingStatus()))
-                .forEach(validTxn -> publishEvent(transactionAddedEvent, validTxn, envelopedEvent.getOriginatorContext()));
+                .forEach(validTxn -> publishEvent(validTxn, envelopedEvent.getOriginatorContext()));
     }
 
-    private void publishEvent(TransactionsAddedEvent event, Transaction_ validTx, OriginatorContext context) {
+    private void publishEvent(Transaction_ validTx, OriginatorContext context) {
         String arrangement = validTx.getArrangementId();
         BigDecimal balance = validTx.getRunningBalance();
+
+        // If you publish an event with a list of N transactions, BackBase will publish the first transaction event N times.
+        // Thus, publish a list of only the one transaction we want to publish.
+        TransactionsAddedEvent event = new TransactionsAddedEvent();
+        event.setTransactions(List.of(validTx));
 
         InterpretedEvent interpretedEvent = InterpretedEvent.builder()
                 .userId(null)
