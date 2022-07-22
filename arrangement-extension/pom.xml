@@ -4,7 +4,7 @@
 
     <groupId>net.trexis.experts</groupId>
     <artifactId>arrangement-extension</artifactId>
-    <version>1.0.3-SNAPSHOT</version>
+    <version>1.0.4-SNAPSHOT</version>
     <name>Trexis :: Backbase :: Arrangement Extension</name>
     <description>Extension for arrangement-manager that is intended to be overlaid on the BackBase build artifact.</description>
 
@@ -110,7 +110,7 @@
                         <configuration>
                             <artifactItems>
                                 <artifactItem>
-                                    <groupId>net.trexis.experts</groupId>
+                                    <groupId>net.trexis.experts.specs</groupId>
                                     <artifactId>cursor-api</artifactId>
                                     <outputDirectory>${project.build.directory}/yaml/cursor/</outputDirectory>
                                     <overWrite>true</overWrite>
