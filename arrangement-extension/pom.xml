@@ -2,24 +2,20 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <parent>
+        <groupId>net.trexis.experts</groupId>
+        <artifactId>trexis-backbase-extensions</artifactId>
+        <version>1.0.0.2022.06-SNAPSHOT</version>
+    </parent>
+
     <groupId>net.trexis.experts</groupId>
     <artifactId>arrangement-extension</artifactId>
-    <version>1.0.4-SNAPSHOT</version>
+    <version>1.0.0.2022.06-SNAPSHOT</version>
     <name>Trexis :: Backbase :: Arrangement Extension</name>
     <description>Extension for arrangement-manager that is intended to be overlaid on the BackBase build artifact.</description>
 
     <properties>
-        <java.version>11</java.version>
-        <maven.compiler.source>${java.version}</maven.compiler.source>
-        <maven.compiler.target>${java.version}</maven.compiler.target>
-        <lombok.version>1.18.12</lombok.version>
-
-        <boat.maven.plugin-version>0.14.4</boat.maven.plugin-version>
-        <dbs.version>2022.01-LTS</dbs.version>
-        <service-sdk.version>13.4.0</service-sdk.version>
-
         <!-- Code coverage -->
-        <jacoco-maven.version>0.8.8</jacoco-maven.version>
         <jacoco.ut.execution.data.file>${project.build.directory}/coverage-reports/jacoco.exec</jacoco.ut.execution.data.file>
         <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco-ut/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
     </properties>
@@ -43,7 +39,7 @@
             <dependency>
                 <groupId>net.trexis.experts</groupId>
                 <artifactId>experts-bom</artifactId>
-                <version>1.0.0.LTS-SNAPSHOT</version>
+                <version>${trexis-bom.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
