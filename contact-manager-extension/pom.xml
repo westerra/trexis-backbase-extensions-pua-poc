@@ -1,5 +1,5 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>net.trexis.experts</groupId>
@@ -7,7 +7,6 @@
     <version>1.0.0-SNAPSHOT</version>
     <name>Trexis :: Backbase :: Contact Manager Extension</name>
     <description>Extension for dbs contact-manager that is intended to be overlaid on the BackBase build artifact.</description>
-
 
     <properties>
         <java.version>11</java.version>
@@ -45,11 +44,11 @@
                 <version>1.0.0.LTS-SNAPSHOT</version>
                 <type>pom</type>
                 <scope>import</scope>
-            </dependency>        </dependencies>
+            </dependency>
+        </dependencies>
     </dependencyManagement>
 
     <dependencies>
-
         <dependency>
             <groupId>com.backbase.dbs.contact</groupId>
             <artifactId>contact-manager</artifactId>
@@ -102,13 +101,6 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${jacoco-maven.version}</version>
-                <configuration>
-                    <excludes>
-                        <exclude>**/com/backbase/dbs/**/*</exclude>
-                        <exclude>**/net/trexis/experts/boot/Application.class</exclude>
-                        <exclude>**/net/trexis/experts/boot/configuration/*.class</exclude>
-                    </excludes>
-                </configuration>
                 <executions>
                     <execution>
                         <goals>
