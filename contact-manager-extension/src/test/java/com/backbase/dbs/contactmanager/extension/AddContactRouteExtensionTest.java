@@ -6,6 +6,7 @@ import com.backbase.buildingblocks.presentation.errors.InternalServerErrorExcept
 import com.backbase.dbs.contactmanager.contact.dto.AccountInformation;
 import com.backbase.dbs.contactmanager.contact.dto.Contact;
 import com.backbase.dbs.contactmanager.contact.dto.InternalRequestWrapper;
+import com.backbase.dbs.contactmanager.extension.config.ContactManagerExtensionConfiguration;
 import com.finite.api.EntityApi;
 import com.finite.api.model.EntityProfile;
 import java.util.List;
@@ -31,6 +32,7 @@ class AddContactRouteExtensionTest {
     public static final String ACCOUNT_NUMBER = "123456";
     public static final String LAST_NAME = "Davis";
 
+    ContactManagerExtensionConfiguration extensionConfiguration = new ContactManagerExtensionConfiguration();
     @Mock
     EntityApi entityApi;
     @Mock
@@ -43,7 +45,8 @@ class AddContactRouteExtensionTest {
 
     @BeforeEach
     void init() {
-        addContactRouteExtension = new AddContactRouteExtension(entityApi);
+        extensionConfiguration.setLastNameValidateFirstCharacters(3);
+        addContactRouteExtension = new AddContactRouteExtension(entityApi, extensionConfiguration);
 
         requestBody = Contact.builder()
                 .accounts(List.of(AccountInformation.builder()

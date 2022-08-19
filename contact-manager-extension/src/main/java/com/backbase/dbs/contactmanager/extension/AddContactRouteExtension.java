@@ -9,6 +9,7 @@ import com.backbase.dbs.contactmanager.contact.dto.AccountInformation;
 import com.backbase.dbs.contactmanager.contact.dto.Contact;
 import com.backbase.dbs.contactmanager.contact.dto.InternalRequestWrapper;
 import com.backbase.dbs.contactmanager.contact.route.CreateContactRouteBuilder;
+import com.backbase.dbs.contactmanager.extension.config.ContactManagerExtensionConfiguration;
 import com.backbase.dbs.contactmanager.rest.spec.client.v2.model.ContactsPostRequestBody;
 import com.finite.api.EntityApi;
 import com.finite.api.model.EntityProfile;
@@ -39,6 +40,7 @@ import org.springframework.web.client.RestClientException;
 public class AddContactRouteExtension {
 
     private final EntityApi entityApi;
+    private final ContactManagerExtensionConfiguration extensionConfiguration;
 
     @PreHook
     public void preHook(InternalRequestWrapper<Contact> request, Exchange exchange) {
@@ -62,7 +64,9 @@ public class AddContactRouteExtension {
         var entityLastName = entityProfile.getLastname();
         if (StringUtils.isEmpty(entityLastName)) throw new InternalServerErrorException("Unable to validate contact, entity has no last name field");
 
-        var expected = StringUtils.substring(contactName, 0, Math.min(entityLastName.length(), 3)).toUpperCase();
+        int charactersToValidate = Math.min(entityLastName.length(), extensionConfiguration.getLastNameValidateFirstCharacters());
+
+        var expected = StringUtils.substring(contactName, 0, charactersToValidate).toUpperCase();
 
         if (!entityLastName.toUpperCase().startsWith(expected)) {
             log.warn("Contact failed validation for input: {}", contactName);
