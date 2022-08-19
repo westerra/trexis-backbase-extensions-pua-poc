@@ -19,6 +19,7 @@
     <modules>
         <module>actions-extension</module>
         <module>arrangement-extension</module>
+        <module>contact-manager-extension</module>
     </modules>
 
     <distributionManagement>
