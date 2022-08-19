@@ -20,7 +20,9 @@
         <jacoco-maven.version>0.8.8</jacoco-maven.version>
         <jacoco.ut.execution.data.file>${project.build.directory}/coverage-reports/jacoco.exec</jacoco.ut.execution.data.file>
         <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco-ut/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+        <maven-surefire-plugin.version>3.0.0-M7</maven-surefire-plugin.version>
     </properties>
+
 
     <dependencyManagement>
         <dependencies>
@@ -95,6 +97,16 @@
     </dependencies>
 
     <build>
+        <pluginManagement>
+            <!-- CODE COVERAGE -->
+            <plugins>
+                <plugin>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${maven-surefire-plugin.version}</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
         <plugins>
             <!-- CODE COVERAGE -->
             <plugin>
@@ -146,6 +158,7 @@
                     </execution>
                 </executions>
             </plugin>
+
         </plugins>
     </build>
 
