@@ -3,6 +3,7 @@ package com.backbase.dbs.contactmanager.extension;
 import com.backbase.buildingblocks.backend.communication.extension.annotations.BehaviorExtension;
 import com.backbase.buildingblocks.backend.communication.extension.annotations.PostHook;
 import com.backbase.buildingblocks.backend.communication.extension.annotations.PreHook;
+import com.backbase.buildingblocks.backend.security.auth.config.SecurityContextUtil;
 import com.backbase.buildingblocks.presentation.errors.BadRequestException;
 import com.backbase.buildingblocks.presentation.errors.InternalServerErrorException;
 import com.backbase.dbs.contactmanager.contact.dto.AccountInformation;
@@ -18,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import okhttp3.internal.Internal;
 import org.apache.camel.Exchange;
 import org.codehaus.plexus.util.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
@@ -41,6 +43,7 @@ public class AddContactRouteExtension {
 
     private final EntityApi entityApi;
     private final ContactManagerExtensionConfiguration extensionConfiguration;
+    private final SecurityContextUtil securityContextUtil;
 
     @PreHook
     public void preHook(InternalRequestWrapper<Contact> request, Exchange exchange) {
@@ -68,9 +71,21 @@ public class AddContactRouteExtension {
 
         var expected = StringUtils.substring(contactName, 0, charactersToValidate).toUpperCase();
 
+        if (contactName.length() < charactersToValidate) throw new BadRequestException("Fewer characters provided than required for validation");
+
+        validateContactIsNotSelf(contactEntityId);
+
         if (!entityLastName.toUpperCase().startsWith(expected)) {
             log.warn("Contact failed validation for input: {}", contactName);
             throw new BadRequestException("Contact failed validation");
         }
+    }
+
+    private void validateContactIsNotSelf(String contactEntityId) {
+        securityContextUtil.getUserTokenClaim(extensionConfiguration.getFiniteEntityIdentifierClaim(), String.class)
+                .filter(contactEntityId::equals)
+                .ifPresent(entityId -> {
+                    throw new BadRequestException("Unable to add yourself as a contact");
+                });
     }
 }

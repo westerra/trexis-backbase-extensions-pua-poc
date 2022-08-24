@@ -9,3 +9,4 @@ Overrides the `CreateContactRoute` route to validate contact information using f
 ## Configuration
 
 - `contact-manager-extension.last-name-validate-first-characters`: : First x number of characters in the last name to validate against, **default 3**
+- `contact-manager-extension.finiteEntityIdentifierClaim`: : The name of the entity identifier claim, **default entityId**
