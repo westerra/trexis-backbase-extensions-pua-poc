@@ -48,7 +48,7 @@ public class AddContactRouteExtension {
     @PreHook
     public void preHook(InternalRequestWrapper<Contact> request, Exchange exchange) {
         var body = request.getInternalRequest().getData();
-        var contactEntityId = body.getAccounts().stream()
+        var contactAccountNumber = body.getAccounts().stream()
                 .findFirst()
                 .map(AccountInformation::getAccountNumber)
                 .orElseThrow(() -> new BadRequestException("Contact's account number is required"));
@@ -58,7 +58,7 @@ public class AddContactRouteExtension {
 
         EntityProfile entityProfile;
         try {
-            entityProfile = entityApi.getEntityProfile(contactEntityId, null, false, false, null, null);
+            entityProfile = entityApi.getEntityProfile(contactAccountNumber, null, false, false, null, null);
         } catch (RestClientException rce) {
             log.error("Unable to get entity profile to validate contact being added!");
             throw new BadRequestException("Unable to validate contact with information provided", rce);
@@ -73,7 +73,7 @@ public class AddContactRouteExtension {
 
         if (contactName.length() < charactersToValidate) throw new BadRequestException("Fewer characters provided than required for validation");
 
-        validateContactIsNotSelf(contactEntityId);
+        validateContactIsNotSelf(contactAccountNumber);
 
         if (!entityLastName.toUpperCase().startsWith(expected)) {
             log.warn("Contact failed validation for input: {}", contactName);
@@ -81,9 +81,9 @@ public class AddContactRouteExtension {
         }
     }
 
-    private void validateContactIsNotSelf(String contactEntityId) {
+    private void validateContactIsNotSelf(String contactAccountNumber) {
         securityContextUtil.getUserTokenClaim(extensionConfiguration.getFiniteEntityIdentifierClaim(), String.class)
-                .filter(contactEntityId::equals)
+                .filter(contactAccountNumber::equals)
                 .ifPresent(entityId -> {
                     throw new BadRequestException("Unable to add yourself as a contact");
                 });

@@ -10,5 +10,5 @@ import org.springframework.context.annotation.Configuration;
 public class ContactManagerExtensionConfiguration {
 
     private int lastNameValidateFirstCharacters = 3;
-    private String finiteEntityIdentifierClaim = "entityId";
+    private String finiteEntityIdentifierClaim = "accountNumber";
 }
