@@ -33,12 +33,16 @@ public class Bai2ExportService {
     private static final AtomicInteger FILE_ID = new AtomicInteger();
     private static final BigDecimal HUNDRED = new BigDecimal("100");
 
+    private static final int TT_MISC_CREDIT = 108;
+    private static final int TT_MISC_DEBIT = 409;
+
+
     private final ArrangementsApi arrangementsApi;
 
-    @Value("${someConfig.bankRoutingNumber:123456789}")
-    private String routingNumber = "081000210";
+    @Value("${backbase.transaction.ofx.export.bankRoutingNumber:123456789}")
+    private String routingNumber = "081000210"; // Maybe removed these assignments?
 
-    @Value("${someConfig.bai2BankName:BANK}")
+    @Value("${backbase.transaction.ofx.export.bai2BankName:BANK}")
     private String bai2BankName = "firstbank";
     
     public String generateOfx(@Body TransactionGetResponseBody request) {
@@ -108,18 +112,21 @@ public class Bai2ExportService {
 
         return accountTotals;
     }
-
+    
     private void outputTransaction(Formatter out, TransactionItem t, Totals accountTotals) {
+        outputTransaction(out, t, accountTotals, t.getCreditDebitIndicator() == CreditDebitIndicator.CRDT);
+    }
+
+    private void outputTransaction(Formatter out, TransactionItem t, Totals accountTotals, boolean isCredit) {
         int amount = new BigDecimal(t.getTransactionAmountCurrency().getAmount())
             .multiply(HUNDRED)
             .setScale(0, RoundingMode.HALF_UP)
             .intValue();
 
-        accountTotals.addAmount(t.getCreditDebitIndicator() == CreditDebitIndicator.CRDT ?
-            amount : -amount);
+        accountTotals.addAmount(isCredit ? amount : -amount);
 
         out.format("16,%03d,%d,0,%s,,%s%n",
-            t.getCreditDebitIndicator() == CreditDebitIndicator.CRDT ? 108 : 409,
+            isCredit,
             Math.abs(amount),
             t.getId(),
             t.getDescription());
