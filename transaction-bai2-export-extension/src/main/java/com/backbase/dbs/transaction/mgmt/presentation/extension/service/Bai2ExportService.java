@@ -9,6 +9,7 @@ import java.util.Formatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -30,12 +31,13 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class Bai2ExportService {
+    public static final String DIRECT_EXPORT_TRANSACTIONS_BAI2 = "direct:transactions.export.bai2";
+
     private static final AtomicInteger FILE_ID = new AtomicInteger();
     private static final BigDecimal HUNDRED = new BigDecimal("100");
 
     private static final int TT_MISC_CREDIT = 108;
     private static final int TT_MISC_DEBIT = 409;
-
 
     private final ArrangementsApi arrangementsApi;
 
@@ -45,7 +47,7 @@ public class Bai2ExportService {
     @Value("${backbase.transaction.ofx.export.bai2BankName:BANK}")
     private String bai2BankName = "firstbank";
     
-    public String generateOfx(@Body TransactionGetResponseBody request) {
+    public String generateBai2(@Body TransactionGetResponseBody request) {
         StringWriter report = new StringWriter();
         Formatter out = new Formatter(report);
         List<TransactionItem> transactions = request.getTransactionItemList();
@@ -106,18 +108,22 @@ public class Bai2ExportService {
 
         transactions.stream()
              .filter(t -> t.getArrangementId().equals(arrangementId))
-             .forEach(t -> outputTransaction(out, t, accountTotals));
+             .forEach(t -> outputTransaction(out, t, accountTotals, account));
 
         outputAccountFooter(out, accountTotals.withHeaders());
 
         return accountTotals;
     }
     
-    private void outputTransaction(Formatter out, TransactionItem t, Totals accountTotals) {
-        outputTransaction(out, t, accountTotals, t.getCreditDebitIndicator() == CreditDebitIndicator.CRDT);
+    private void outputTransaction(Formatter out, TransactionItem t, Totals accountTotals, AccountArrangementItem account) {
+        outputTransaction(out, t, accountTotals, t.getCreditDebitIndicator() == CreditDebitIndicator.CRDT, account);
     }
 
-    private void outputTransaction(Formatter out, TransactionItem t, Totals accountTotals, boolean isCredit) {
+    private void outputTransaction(Formatter out, 
+                                   TransactionItem t, 
+                                   Totals accountTotals, 
+                                   boolean isCredit,
+                                   AccountArrangementItem account) {
         int amount = new BigDecimal(t.getTransactionAmountCurrency().getAmount())
             .multiply(HUNDRED)
             .setScale(0, RoundingMode.HALF_UP)
@@ -125,12 +131,57 @@ public class Bai2ExportService {
 
         accountTotals.addAmount(isCredit ? amount : -amount);
 
-        out.format("16,%03d,%d,0,%s,,%s%n",
-            isCredit,
+        out.format("16,%03d,%d,0,%s,,",
+            getTransactionType(t, isCredit, account),
             Math.abs(amount),
-            t.getId(),
-            t.getDescription());
+            t.getId());
+            
+        var optionalText = getTransactionText(t, account, isCredit);
+        if (optionalText.isPresent()) {
+            out.format("%s%n", optionalText.get().get(0));
+            optionalText.get().stream()
+            .skip(1)
+            .forEach(s -> {out.format("88,%s%n", s); accountTotals.incrementCount();});
+        } else {
+            out.format("/%n");
+        }
+    }
 
+    /*
+     * This method returns the BAI2 transaction type. The default implementation will
+     * return 108 (Any Credit) or 409 (Any Debit). The method can be overridden in a
+     * subclass to provide more detailed codes.
+     * 
+     * @param t the <code>TransactionItem</code> being described by the text
+     * @param account the <code>AccountItem</code> to which the <code>TransactionItem</code> belongs
+     * @param isCredit <code>true</code> if the transaction credits the amount to the account
+     *  
+     * @return BAI2 transaction type value
+     */
+    protected int getTransactionType(TransactionItem xaction, boolean isCredit, AccountArrangementItem account) {
+        assert account != null; // Mostly to make SonarQube happy, but we expect this 
+        assert xaction != null; // Mostly to make SonarQube happy, but we expect this
+        return isCredit ? TT_MISC_CREDIT : TT_MISC_DEBIT;
+    }
+
+    /*
+     * This method can be overridden in a subclass to allow for more complex
+     * multiline text. It should return <code>Optional.empty()</code> if there
+     * is <em>no</em> text to accompany the transaction. If it returns a 
+     * <code>List</code>, it is expected to have at least one element.
+     * 
+     * @param t the <code>TransactionItem</code> being described by the text
+     * @param account the <code>AccountItem</code> to which the <code>TransactionItem</code> belongs
+     * @param isCredit <code>true</code> if the transaction credits the amount to the account
+     * 
+     * @return an optional list of strings. If the <code>Optional</code> is not empty, 
+     *         the <code>List</code> <em>must</em> contain at least one item.
+     */
+    protected Optional<List<String>> getTransactionText(TransactionItem t, AccountArrangementItem account, boolean isCredit) {
+        assert account != null; // Mostly to make SonarQube happy, but we expect this
+        assert isCredit != !isCredit; // Entirely to make SonarQube happy
+        assert t.getDescription() != null : "TransactionItem::getDescription has a validator of not null";
+        return Optional.of(List.of(t.getDescription()));
     }
 
     private void outputAccountFooter(Formatter out, Totals accountTotals) {
@@ -175,10 +226,14 @@ public class Bai2ExportService {
         private long amount;
         private int count;
 
-        public Totals addAmount(int increment) {
-            amount += increment;
+        public Totals incrementCount() {
             count += 1;
             return this;
+        }
+
+        public Totals addAmount(int increment) {
+            amount += increment;
+            return incrementCount();
         }
 
         public Totals add(Totals subTotal) {

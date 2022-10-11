@@ -8,6 +8,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import com.backbase.buildingblocks.communication.http.HttpCommunicationConfiguration;
 
+@Configuration
+@ConfigurationProperties("backbase.communication.services.arrangement-manager")
 public class ArrangementManagerConfiguration extends ApiClientConfig {
     
     public static final String SERVICE_ID = "arrangement-manager";
