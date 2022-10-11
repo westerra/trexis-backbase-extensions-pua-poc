@@ -25,6 +25,7 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
 import org.apache.camel.Body;
+import org.apache.camel.Consume;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -46,7 +47,8 @@ public class Bai2ExportService {
 
     @Value("${backbase.transaction.ofx.export.bai2BankName:BANK}")
     private String bai2BankName = "firstbank";
-    
+
+    @Consume(uri = DIRECT_EXPORT_TRANSACTIONS_BAI2)
     public String generateBai2(@Body TransactionGetResponseBody request) {
         StringWriter report = new StringWriter();
         Formatter out = new Formatter(report);
