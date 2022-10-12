@@ -13,11 +13,11 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.backbase.dbs.arrangement.client.v2.ArrangementsApi;
+import com.backbase.dbs.arrangement.client.v2.model.AccountArrangementItem;
+import com.backbase.dbs.arrangement.client.v2.model.AccountArrangementItems;
 import com.backbase.dbs.transaction.mgmt.presentation.domain.TransactionGetResponseBody;
 import com.backbase.presentation.transaction.rest.spec.v2.transactions.TransactionItem;
-import com.backbase.dbs.arrangement.arrangement_manager.api.client.v2.ArrangementsApi;
-import com.backbase.dbs.arrangement.arrangement_manager.v2.model.AccountArrangementItem;
-import com.backbase.dbs.arrangement.arrangement_manager.v2.model.AccountArrangementItems;
 import com.backbase.dbs.transaction.api.client.v2.model.CreditDebitIndicator;
 import com.backbase.dbs.transaction.api.client.v2.model.Currency;
 
@@ -109,7 +109,7 @@ public class Bai2ExportServiceTest {
             .distinct()
             .collect(Collectors.toList());
 
-        Map<String, AccountArrangementItem> bbanMap = arIds.stream()    
+        Map<String, AccountArrangementItem> bbanMap = arIds.stream()
             .map(arId -> mapArrangementId2Item(arId, xaction))
             .reduce(new HashMap<String, AccountArrangementItem>(), 
                 (m, a) -> {m.put(a.getId(), a); return m;}, 

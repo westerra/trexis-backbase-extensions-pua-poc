@@ -1,38 +1,28 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>com.backbase.buildingblocks</groupId>
-        <artifactId>backbase-service-extension-starter-parent</artifactId>
-        <version>14.0.0</version>
-    </parent>
-
-    <groupId>net.experts.trexis</groupId>
-    <artifactId>transaction-bai2-export-extension</artifactId>
+    <groupId>net.trexis.experts</groupId>
+    <artifactId>transaction-extension</artifactId>
     <version>1.0.0-SNAPSHOT</version>
+    <name>Trexis :: Backbase :: Transaction Extension</name>
+    <description>Extension for transactions that is intended to be overlaid on the BackBase build artifact.</description>
 
     <properties>
+        <java.version>11</java.version>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
 
-        <!-- docker configuration -->
-        <docker.image.name>harbor.backbase.eu/development/${project.artifactId}</docker.image.name>
-        <docker.image.tag>${project.version}</docker.image.tag>
+        <lombok.version>1.18.22</lombok.version>
 
-        <!-- base image -->
-        <docker.base.tag>BB-2022.02.3</docker.base.tag>
-        <docker.base.name>repo.backbase.com/backbase-docker-releases/transaction-manager</docker.base.name>
-
-        <lombok.version>1.18.24</lombok.version>
-        <actions-reactive-spec.version>0.2.1</actions-reactive-spec.version>
-        <transaction-management.version>1.138</transaction-management.version>
-        <arrangement-manager.version>1.7.24</arrangement-manager.version>
         <boat.maven.plugin-version>0.14.4</boat.maven.plugin-version>
+        <dbs.version>2022.01-LTS</dbs.version>
+        <service-sdk.version>13.4.0</service-sdk.version>
 
-        <!-- code coverage -->
+        <!-- Code coverage -->
         <jacoco-maven.version>0.8.8</jacoco-maven.version>
         <jacoco.ut.execution.data.file>${project.build.directory}/coverage-reports/jacoco.exec</jacoco.ut.execution.data.file>
         <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco-ut/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
-        <maven-surefire-plugin.version>3.0.0-M7</maven-surefire-plugin.version>
 
     </properties>
 
@@ -41,7 +31,14 @@
             <dependency>
                 <groupId>com.backbase</groupId>
                 <artifactId>backbase-bom</artifactId>
-                <version>2022.02.3</version>
+                <version>${dbs.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.backbase.buildingblocks</groupId>
+                <artifactId>service-sdk-starter-core</artifactId>
+                <version>${service-sdk.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -49,49 +46,55 @@
     </dependencyManagement>
 
     <dependencies>
-        <!--MISC-->
+        <!-- BACKBASE -->
         <dependency>
-            <groupId>net.trexis.experts.specs</groupId>
-            <artifactId>ingestion-api</artifactId>
-            <!-- THIS IS A HACK -->
-            <version>1.0.0-SNAPSHOT</version>
+            <groupId>com.backbase.dbs.transaction</groupId>
+            <artifactId>transaction-manager</artifactId>
+            <classifier>classes</classifier>
+            <type>jar</type>
+            <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>com.backbase.buildingblocks</groupId>
+            <artifactId>service-sdk-starter-core</artifactId>
+            <type>pom</type>
+        </dependency>
+
+        <!--MISC-->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>${lombok.version}</version>
             <scope>compile</scope>
         </dependency>
+
+        <!-- Testing -->
         <dependency>
-            <groupId>com.backbase.dbs.transaction</groupId>
-            <artifactId>transaction-manager</artifactId>
-            <classifier>classes</classifier>
-            <scope>provided</scope>
+            <groupId>com.backbase.buildingblocks</groupId>
+            <artifactId>service-sdk-starter-test</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
 
     <build>
-        <pluginManagement>
-            <!-- CODE COVERAGE -->
-            <plugins>
-                <plugin>
-                    <artifactId>maven-surefire-plugin</artifactId>
-                    <version>${maven-surefire-plugin.version}</version>
-                </plugin>
-            </plugins>
-        </pluginManagement>
-
         <plugins>
             <!-- CODE COVERAGE -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${jacoco-maven.version}</version>
+                <configuration>
+                    <excludes>
+                        <exclude>**/com/backbase/dbs/**/*</exclude>
+                        <exclude>**/net/trexis/experts/boot/Application.class</exclude>
+                        <exclude>**/net/trexis/experts/boot/configuration/*.class</exclude>
+                    </excludes>
+                </configuration>
                 <executions>
                     <execution>
                         <goals>
@@ -137,44 +140,19 @@
                     </execution>
                 </executions>
             </plugin>
-            
-            <plugin>
-                <groupId>com.backbase.oss</groupId>
-                <artifactId>boat-maven-plugin</artifactId>
-                <version>${boat.maven.plugin-version}</version>
-                <executions>
-                    <!-- Generate OpenAPI interface stubs. -->
-                    <execution>
-                        <id>generate-arrangement-service-api</id>
-                        <goals>
-                            <goal>generate-rest-template-embedded</goal>
-                        </goals>
-                        <phase>generate-sources</phase>
-                        <configuration>
-                            <inputSpec>
-                                ${project.basedir}/src/main/resources/arrangement-service-api-v2.5.0.yaml
-                            </inputSpec>
-                            <apiPackage>com.backbase.dbs.arrangement.arrangement-manager.api.client.v2</apiPackage>
-                            <modelPackage>com.backbase.dbs.arrangement.arrangement-manager.v2.model</modelPackage>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>generate-transaction-manager-service-api</id>
-                        <goals>
-                            <goal>generate-rest-template-embedded</goal>
-                        </goals>
-                        <phase>generate-sources</phase>
-                        <configuration>
-                            <inputSpec>
-                                ${project.basedir}/src/main/resources/transaction-manager-service-api-v2.8.0.yaml
-                            </inputSpec>
-                            <apiPackage>com.backbase.dbs.transaction.transaction-manager.api.client.v2</apiPackage>
-                            <modelPackage>com.backbase.dbs.transaction.transaction-manager.v2.model</modelPackage>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
 
+    <distributionManagement>
+        <repository>
+            <id>finiteapi-releases</id>
+            <name>libs-release</name>
+            <url>https://finiteapi.jfrog.io/artifactory/libs-release-local</url>
+        </repository>
+        <snapshotRepository>
+            <id>finiteapi-snapshots</id>
+            <name>libs-snapshots</name>
+            <url>https://finiteapi.jfrog.io/artifactory/libs-snapshots-local</url>
+        </snapshotRepository>
+    </distributionManagement>
 </project>

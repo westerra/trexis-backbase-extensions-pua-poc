@@ -14,12 +14,11 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import com.backbase.dbs.arrangement.arrangement_manager.v2.model.AccountArrangementItem;
+import com.backbase.dbs.arrangement.client.v2.ArrangementsApi;
+import com.backbase.dbs.arrangement.client.v2.model.AccountArrangementItem;
 import com.backbase.presentation.transaction.rest.spec.v2.transactions.TransactionItem;
 import com.backbase.dbs.transaction.api.client.v2.model.CreditDebitIndicator;
 import com.backbase.dbs.transaction.mgmt.presentation.domain.TransactionGetResponseBody;
-
-import com.backbase.dbs.arrangement.arrangement_manager.api.client.v2.ArrangementsApi;
 
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
