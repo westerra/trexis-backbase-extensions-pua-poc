@@ -46,7 +46,7 @@ public class Bai2ExportServiceTest {
 
         programArrangementApi(tgrb.getTransactionItemList());
 
-        String bai2 = service.generateBai2(tgrb);
+        String bai2 = ((Bai2Resource)service.generateBai2(tgrb)).getAsString();
         String[] lines = bai2.split("\n");
         assertEquals(11, lines.length);
         assertTrue(lines[0].matches("01,081000210,081000210,\\d{6},\\d{4},0,,,2/"));

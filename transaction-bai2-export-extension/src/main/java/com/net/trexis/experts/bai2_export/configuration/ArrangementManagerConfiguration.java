@@ -1,4 +1,4 @@
-package com.net.trexis.experts.bai2Export.configuration;
+package com.net.trexis.experts.bai2_export.configuration;
 import com.backbase.buildingblocks.communication.client.ApiClientConfig;
 import com.backbase.dbs.arrangement.client.ApiClient;
 import com.backbase.dbs.arrangement.client.v2.ArrangementsApi;
