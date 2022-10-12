@@ -27,6 +27,7 @@ import org.apache.camel.Body;
 import org.apache.camel.Consume;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.resource.HttpResource;
 
 @Component
 @RequiredArgsConstructor
@@ -47,17 +48,26 @@ public class Bai2ExportService {
     @Value("${backbase.transaction.ofx.export.bai2BankName:BANK}")
     private String bai2BankName = "firstbank";
 
-    @Consume(uri = DIRECT_EXPORT_TRANSACTIONS_BAI2)
-    public String generateBai2(@Body TransactionGetResponseBody request) {
+    @Consume(DIRECT_EXPORT_TRANSACTIONS_BAI2)
+    public HttpResource generateBai2(@Body TransactionGetResponseBody request) {
         StringWriter report = new StringWriter();
-        Formatter out = new Formatter(report);
-        List<TransactionItem> transactions = request.getTransactionItemList();
 
-        Set<String> arrangementIds = transactions.stream()
-             .map(TransactionItem::getArrangementId)
-             .distinct()
-             .collect(Collectors.toSet());
+        outputAllTheThings(new Formatter(report), 
+                           request.getTransactionItemList());
 
+        return new Bai2Resource(report.toString());
+    }
+
+    private void outputAllTheThings(Formatter out, List<TransactionItem> transactions) {
+        outputAllTheThings(out, 
+                           transactions, 
+                           transactions.stream()
+                                .map(TransactionItem::getArrangementId)
+                                .distinct()
+                                .collect(Collectors.toSet()));
+    }
+
+    private void outputAllTheThings(Formatter out, List<TransactionItem> transactions, Set<String> arrangementIds) {
         Map<String, AccountArrangementItem> accountMap = getAccountMap(arrangementIds);
         Totals fileTotals = new Totals();
 
@@ -69,16 +79,16 @@ public class Bai2ExportService {
             .forEach(arId -> 
                         fileTotals.add(
                             outputAccountRecord(out, 
-                            transactions, 
-                            arId,
-                            accountMap.get(arId)))
+                                transactions, 
+                                arId,
+                                accountMap.get(arId)
+                            )
+                        )
             );
 
         outputGroupFooter(out, arrangementIds.size(), fileTotals.withHeaders());
         
         outputFileFooter(out, fileTotals.withHeaders());
-
-        return report.toString();
     }
 
     private Map<String, AccountArrangementItem> getAccountMap(final Set<String> arrangementIds) {
