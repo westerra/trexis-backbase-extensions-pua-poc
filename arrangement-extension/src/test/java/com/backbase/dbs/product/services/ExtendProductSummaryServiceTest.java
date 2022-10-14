@@ -14,6 +14,8 @@ import com.backbase.dbs.product.config.ProductSummaryConfig;
 import com.backbase.dbs.product.repository.ArrangementJpaRepository;
 import com.backbase.dbs.product.summary.ProductSummaryFilter;
 import com.backbase.dbs.user.api.client.v2.UserManagementApi;
+import com.backbase.dbs.user.api.client.v2.model.GetUser;
+import liquibase.pro.packaged.G;
 import net.trexis.experts.cursor.cursor_service.api.client.v2.CursorApi;
 import net.trexis.experts.cursor.cursor_service.v2.model.Cursor;
 import net.trexis.experts.cursor.cursor_service.v2.model.CursorGetResponseBody;
@@ -52,6 +54,7 @@ class ExtendProductSummaryServiceTest {
     private ExtendProductSummaryService extendProductSummaryService;
 
     private final String MOCK_EXTERNAL_USER_ID = "mockExternalUserId";
+    private final String MOCK_LEGAL_ENTITY_ID = "mockLegalEntityId";
     private final String MOCK_INTERNAL_ARRANGEMENT_ID = "mockInternalArrangementId";
 
     @BeforeEach
@@ -66,6 +69,12 @@ class ExtendProductSummaryServiceTest {
 
         when(securityContextUtil.getUserTokenClaim(any(), any()))
                 .thenReturn(Optional.of(MOCK_EXTERNAL_USER_ID));
+
+        GetUser getUser = new GetUser();
+        getUser.setExternalId(MOCK_EXTERNAL_USER_ID);
+        getUser.setLegalEntityId(MOCK_LEGAL_ENTITY_ID);
+        when(userManagementApi.getUserByExternalIdWithHttpInfo(any(), any()))
+                .thenReturn(ResponseEntity.ok(getUser));
     }
 
     @Test
@@ -82,7 +91,8 @@ class ExtendProductSummaryServiceTest {
     void getProductSummary_BadCursor_InternalServerErrorExceptionFail() {
         ProductSummaryFilter filter = ProductSummaryFilter.builder().build();
 
-        doThrow(new InternalServerErrorException()).when(cursorApi).getCursorWithHttpInfo(any(), any(), any());
+        when(cursorApi.getCursorWithHttpInfo(any(), any(), any()))
+                .thenReturn(ResponseEntity.badRequest().build());
 
         //This should throw a exception, since we don't continue on a failed cursor
         productSummaryConfig.setContinueAfterFailedCursorCheck(false);
@@ -94,7 +104,8 @@ class ExtendProductSummaryServiceTest {
     void getProductSummary_BadCursor_InternalServerErrorExceptionContinue() {
         ProductSummaryFilter filter = ProductSummaryFilter.builder().build();
 
-        doThrow(new InternalServerErrorException()).when(cursorApi).getCursorWithHttpInfo(any(), any(), any());
+        when(cursorApi.getCursorWithHttpInfo(any(), any(), any()))
+                .thenReturn(ResponseEntity.badRequest().build());
 
         //This should NOT fail, since we continue on a failed cursor
         productSummaryConfig.setContinueAfterFailedCursorCheck(true);
@@ -134,6 +145,15 @@ class ExtendProductSummaryServiceTest {
                 .thenReturn(ResponseEntity.ok(new CursorGetResponseBody().cursor(cursorInProgress)))
                 .thenReturn(ResponseEntity.ok(new CursorGetResponseBody().cursor(cursorSuccess)));
 
+        extendProductSummaryService.getProductSummary(filter);
+    }
+    @Test
+    void getProductSummary_InProgressMaxWait() {
+        ProductSummaryFilter filter = ProductSummaryFilter.builder().build();
+
+        Cursor cursorInProgress = setupUserCursor(Cursor.StatusEnum.IN_PROGRESS, "2022-01-01T00:00:00", "2022-01-01T00:00:00");
+        when(cursorApi.getCursorWithHttpInfo(any(), any(), any()))
+                .thenReturn(ResponseEntity.ok(new CursorGetResponseBody().cursor(cursorInProgress)));
         extendProductSummaryService.getProductSummary(filter);
     }
 
