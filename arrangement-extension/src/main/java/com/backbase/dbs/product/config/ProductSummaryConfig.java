@@ -1,4 +1,4 @@
-package com.backbase.dbs.product.summary.config;
+package com.backbase.dbs.product.config;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

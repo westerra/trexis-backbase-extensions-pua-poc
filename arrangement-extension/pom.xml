@@ -4,7 +4,7 @@
 
     <groupId>net.trexis.experts</groupId>
     <artifactId>arrangement-extension</artifactId>
-    <version>1.0.4-SNAPSHOT</version>
+    <version>1.0.5-SNAPSHOT</version>
     <name>Trexis :: Backbase :: Arrangement Extension</name>
     <description>Extension for arrangement-manager that is intended to be overlaid on the BackBase build artifact.</description>
 
@@ -65,6 +65,20 @@
             <type>pom</type>
         </dependency>
 
+        <!-- treXis -->
+        <dependency>
+            <groupId>net.trexis.experts</groupId>
+            <artifactId>finite-client</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <!-- this dependency resolves the transient inheritance when using this jar in the arrangement manager -->
+            <!-- this version need to match the version of gson in the arrangement manager -->
+            <version>2.8.9</version>
+        </dependency>
+
         <!--MISC-->
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -111,7 +125,7 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <id>unpack-backbase-openapi-spec</id>
+                        <id>unpack-backbase-notifications-openapi-spec</id>
                         <phase>generate-sources</phase>
                         <goals>
                             <goal>unpack</goal>
@@ -168,6 +182,20 @@
                             <modelPackage>com.backbase.dbs.notifications.notification-service.v2.model</modelPackage>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>generate-arrangement-service-api</id>
+                        <goals>
+                            <goal>generate-rest-template-embedded</goal>
+                        </goals>
+                        <phase>generate-sources</phase>
+                        <configuration>
+                            <inputSpec>
+                                ${basedir}/src/main/resources/arrangement-service-api-v2.6.0.yaml
+                            </inputSpec>
+                            <apiPackage>com.backbase.dbs.arrangement.arrangement-manager.api.client.v2</apiPackage>
+                            <modelPackage>com.backbase.dbs.arrangement.arrangement-manager.v2.model</modelPackage>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
 
@@ -178,9 +206,7 @@
                 <version>${jacoco-maven.version}</version>
                 <configuration>
                     <excludes>
-                        <exclude>**/com/backbase/dbs/**/*</exclude>
-                        <exclude>**/net/trexis/experts/boot/Application.class</exclude>
-                        <exclude>**/net/trexis/experts/boot/configuration/*.class</exclude>
+                        <exclude>**/com/backbase/dbs/product/config/*</exclude>
                     </excludes>
                 </configuration>
                 <executions>
