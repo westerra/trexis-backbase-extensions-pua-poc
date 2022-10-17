@@ -22,6 +22,7 @@ public class CommonFiniteService {
         account.setId(accountId);
         account.setTitle(title);
         try {
+            accountsApi.getApiClient().setApiKey(finiteConfiguration.getAPIKey("core").getApikey());
             accountsApi.putAccount(account.getId(), account, traceId + "_PREFERENCE_UPDATE", null, false, finiteConfiguration.getEnhance().isAccounts());
         } catch(Exception ex){
             log.error("Unable to update account title: {}", ex.getMessage(), ex);
