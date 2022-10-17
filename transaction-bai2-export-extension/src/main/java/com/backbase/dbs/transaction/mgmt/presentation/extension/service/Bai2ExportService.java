@@ -34,7 +34,8 @@ import org.springframework.web.servlet.resource.HttpResource;
 public class Bai2ExportService {
     public static final String DIRECT_EXPORT_TRANSACTIONS_BAI2 = "direct:transactions.export.bai2";
 
-    private static final AtomicInteger FILE_ID = new AtomicInteger();
+    public static final AtomicInteger FILE_ID = new AtomicInteger();
+    
     private static final BigDecimal HUNDRED = new BigDecimal("100");
 
     private static final int TT_MISC_CREDIT = 108;
@@ -43,10 +44,10 @@ public class Bai2ExportService {
     private final ArrangementsApi arrangementsApi;
 
     @Value("${backbase.transaction.ofx.export.bankRoutingNumber:123456789}")
-    private String routingNumber = "081000210"; // Maybe removed these assignments?
+    private String routingNumber = "987654321"; // Maybe removed these assignments?
 
     @Value("${backbase.transaction.ofx.export.bai2BankName:BANK}")
-    private String bai2BankName = "firstbank";
+    private String bai2BankName = "bank_name_not_configured";
 
     @Consume(DIRECT_EXPORT_TRANSACTIONS_BAI2)
     public HttpResource generateBai2(@Body TransactionGetResponseBody request) {
