@@ -21,8 +21,10 @@
 
         <!-- Code coverage -->
         <jacoco-maven.version>0.8.8</jacoco-maven.version>
+        <!-- JUnit 5 requires Surefire version 2.22.0 or higher -->
+        <apache.surefire.version>3.0.0-M7</apache.surefire.version>
         <jacoco.ut.execution.data.file>${project.build.directory}/coverage-reports/jacoco.exec</jacoco.ut.execution.data.file>
-        <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco-ut/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+        <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 
     </properties>
 
@@ -83,6 +85,11 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${apache.surefire.version}</version>
+            </plugin>
             <!-- CODE COVERAGE -->
             <plugin>
                 <groupId>org.jacoco</groupId>
@@ -90,10 +97,10 @@
                 <version>${jacoco-maven.version}</version>
                 <configuration>
                     <excludes>
-                        <exclude>**/com/backbase/dbs/**/*</exclude>
-                        <exclude>**/net/trexis/experts/boot/Application.class</exclude>
-                        <exclude>**/net/trexis/experts/boot/configuration/*.class</exclude>
+                        <!-- excludes go here; best for entire packaged -->
                     </excludes>
+                    <dataFile>${jacoco.ut.execution.data.file}</dataFile>
+                    <destFile>${jacoco.ut.execution.data.file}</destFile>
                 </configuration>
                 <executions>
                     <execution>
@@ -101,7 +108,7 @@
                             <goal>prepare-agent</goal>
                         </goals>
                         <configuration>
-                            <destFile>${jacoco.ut.execution.data.file}</destFile>
+                            
                         </configuration>
                     </execution>
                     <execution>
@@ -137,6 +144,9 @@
                         <goals>
                             <goal>report</goal>
                         </goals>
+                        <configuration>
+                            <dataFile>${jacoco.ut.execution.data.file}</dataFile>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

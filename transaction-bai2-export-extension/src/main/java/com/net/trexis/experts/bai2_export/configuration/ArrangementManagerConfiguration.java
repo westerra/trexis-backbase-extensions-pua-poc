@@ -3,6 +3,9 @@ import com.backbase.buildingblocks.communication.client.ApiClientConfig;
 import com.backbase.dbs.arrangement.client.ApiClient;
 import com.backbase.dbs.arrangement.client.v2.ArrangementsApi;
 import com.backbase.dbs.arrangement.client.v2.ProductsApi;
+
+import lombok.Generated;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,6 +13,7 @@ import com.backbase.buildingblocks.communication.http.HttpCommunicationConfigura
 
 @Configuration
 @ConfigurationProperties("backbase.communication.services.arrangement-manager")
+@Generated
 public class ArrangementManagerConfiguration extends ApiClientConfig {
     
     public static final String SERVICE_ID = "arrangement-manager";
