@@ -1,4 +1,4 @@
-package com.backbase.dbs.product.summary.config;
+package com.backbase.dbs.product.config;
 
 import com.backbase.buildingblocks.communication.client.ApiClientConfig;
 import net.trexis.experts.cursor.cursor_service.api.client.ApiClient;
