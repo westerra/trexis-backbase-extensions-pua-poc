@@ -1,45 +1,51 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
 
-    <groupId>net.trexis.experts</groupId>
-    <artifactId>trexis-backbase-extensions</artifactId>
-    <version>1.0.0.2022.06-SNAPSHOT</version>
-    <packaging>pom</packaging>
-    <name>Trexis :: Backbase :: Extensions</name>
+  <groupId>net.trexis.experts</groupId>
+  <artifactId>trexis-backbase-extensions</artifactId>
+  <version>1.0.0.2022.06-SNAPSHOT</version>
+  <packaging>pom</packaging>
+      
+  <name>Trexis :: Backbase :: Extensions</name>
+      
+  <properties>
+    <java.version>11</java.version>
+    <maven.compiler.source>${java.version}</maven.compiler.source>
+    <maven.compiler.target>${java.version}</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-    <properties>
-        <java.version>11</java.version>
-        <maven.compiler.source>${java.version}</maven.compiler.source>
-        <maven.compiler.target>${java.version}</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <trexis-bom.version>1.0.0.2022.06-SNAPSHOT</trexis-bom.version>
 
-        <trexis-bom.version>1.0.0.2022.06-SNAPSHOT</trexis-bom.version>
+    <lombok.version>1.18.22</lombok.version>
+    <boat.maven.plugin-version>0.15.8</boat.maven.plugin-version>
+    <dbs.version>2022.06</dbs.version>
+    <service-sdk.version>14.2.0</service-sdk.version>
+    <jacoco-maven.version>0.8.8</jacoco-maven.version>
 
-        <lombok.version>1.18.22</lombok.version>
-        <boat.maven.plugin-version>0.15.8</boat.maven.plugin-version>
-        <dbs.version>2022.06</dbs.version>
-        <service-sdk.version>13.4.0</service-sdk.version>
-        <jacoco-maven.version>0.8.8</jacoco-maven.version>
-    </properties>
+  </properties>
+      
+  <modules>
+    <module>actions-extension</module>
+    <module>arrangement-extension</module>
+    <module>contact-manager-extension</module>
+    <module>transaction-bai2-export-extension</module>
+  </modules>
+      
+  <distributionManagement>
+    <repository>
+      <id>finiteapi-releases</id>
+      <name>libs-release</name>
+      <url>https://finiteapi.jfrog.io/artifactory/libs-release-local</url>
+    </repository>
+            
+    <snapshotRepository>
+      <id>finiteapi-snapshots</id>
+      <name>libs-snapshots</name>
+      <url>https://finiteapi.jfrog.io/artifactory/libs-snapshots-local</url>
+    </snapshotRepository>
+        
+  </distributionManagement>
 
-    <modules>
-        <module>actions-extension</module>
-        <module>arrangement-extension</module>
-        <module>contact-manager-extension</module>
-    </modules>
-
-    <distributionManagement>
-        <repository>
-            <id>finiteapi-releases</id>
-            <name>libs-release</name>
-            <url>https://finiteapi.jfrog.io/artifactory/libs-release-local</url>
-        </repository>
-        <snapshotRepository>
-            <id>finiteapi-snapshots</id>
-            <name>libs-snapshots</name>
-            <url>https://finiteapi.jfrog.io/artifactory/libs-snapshots-local</url>
-        </snapshotRepository>
-    </distributionManagement>
 </project>
