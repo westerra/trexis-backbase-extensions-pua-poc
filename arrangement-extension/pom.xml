@@ -131,6 +131,15 @@
                                     <outputDirectory>${project.build.directory}</outputDirectory>
                                     <destFileName>trexis-finite-client.jar</destFileName>
                                 </artifactItem>
+                                <artifactItem>
+                                    <groupId>io.swagger.codegen.v3</groupId>
+                                    <artifactId>swagger-codegen</artifactId>
+                                    <version>3.0.14</version>
+                                    <type>jar</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.build.directory}</outputDirectory>
+                                    <destFileName>swagger-codegen.jar</destFileName>
+                                </artifactItem>
                             </artifactItems>
                         </configuration>
                     </execution>
