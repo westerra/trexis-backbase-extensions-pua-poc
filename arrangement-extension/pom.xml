@@ -115,34 +115,20 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.1.1</version>
+                <version>3.3.0</version>
                 <executions>
                     <execution>
-                        <id>copy-dependency-jar-for-docker-pickup</id>
+                        <id>copy-dependencies</id>
                         <phase>package</phase>
                         <goals>
-                            <goal>copy</goal>
+                            <goal>copy-dependencies</goal>
                         </goals>
                         <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>net.trexis.experts</groupId>
-                                    <artifactId>finite-client</artifactId>
-                                    <type>jar</type>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.directory}</outputDirectory>
-                                    <destFileName>trexis-finite-client.jar</destFileName>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>io.swagger.codegen.v3</groupId>
-                                    <artifactId>swagger-codegen</artifactId>
-                                    <version>3.0.14</version>
-                                    <type>jar</type>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.directory}</outputDirectory>
-                                    <destFileName>swagger-codegen.jar</destFileName>
-                                </artifactItem>
-                            </artifactItems>
+                            <outputDirectory>${project.build.directory}/dependencies</outputDirectory>
+                            <overWriteReleases>false</overWriteReleases>
+                            <overWriteSnapshots>false</overWriteSnapshots>
+                            <overWriteIfNewer>true</overWriteIfNewer>
+                            <excludeGroupIds>com.backbase.dbs.arrangement</excludeGroupIds>
                         </configuration>
                     </execution>
                 </executions>
