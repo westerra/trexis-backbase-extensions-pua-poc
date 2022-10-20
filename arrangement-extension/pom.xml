@@ -126,6 +126,7 @@
                             <overWriteReleases>false</overWriteReleases>
                             <overWriteSnapshots>false</overWriteSnapshots>
                             <overWriteIfNewer>true</overWriteIfNewer>
+                            <excludeGroupIds>com.backbase.dbs.arrangement</excludeGroupIds>
                         </configuration>
                     </execution>
                 </executions>
