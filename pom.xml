@@ -4,7 +4,7 @@
 
   <groupId>net.trexis.experts</groupId>
   <artifactId>trexis-backbase-extensions</artifactId>
-  <version>1.0.0.2022.06-SNAPSHOT</version>
+  <version>1.0.0.2022.08-SNAPSHOT</version>
   <packaging>pom</packaging>
       
   <name>Trexis :: Backbase :: Extensions</name>
@@ -16,11 +16,11 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-    <trexis-bom.version>1.0.0.2022.06-SNAPSHOT</trexis-bom.version>
+    <trexis-bom.version>1.0.1.2022.08-SNAPSHOT</trexis-bom.version>
 
     <lombok.version>1.18.22</lombok.version>
     <boat.maven.plugin-version>0.15.8</boat.maven.plugin-version>
-    <dbs.version>2022.06</dbs.version>
+    <dbs.version>2022.08-LTS</dbs.version>
     <service-sdk.version>14.2.0</service-sdk.version>
     <jacoco-maven.version>0.8.8</jacoco-maven.version>
 
