@@ -23,8 +23,10 @@ import com.backbase.dbs.transaction.mgmt.presentation.domain.TransactionGetRespo
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
+import lombok.SneakyThrows;
 import org.apache.camel.Body;
 import org.apache.camel.Consume;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.resource.HttpResource;
@@ -41,6 +43,8 @@ public class Bai2ExportService {
     private static final int TT_MISC_CREDIT = 108;
     private static final int TT_MISC_DEBIT = 409;
 
+    protected static final char PADDING_CHAR = ' ';
+
     private final ArrangementsApi arrangementsApi;
 
     @Value("${backbase.transaction.ofx.export.bankRoutingNumber:123456789}")
@@ -48,6 +52,12 @@ public class Bai2ExportService {
 
     @Value("${backbase.transaction.ofx.export.bai2BankName:BANK}")
     private String bai2BankName = "bank_name_not_configured";
+
+    @Value("${backbase.transaction.ofx.export.bai2BlockSize:80}")
+    private Integer bai2BlockSize = 80; // change to int
+
+    @Value("${backbase.transaction.ofx.export.bai2RecordSize:80}")
+    private Integer bai2RecordSize = 80;
 
     @Consume(DIRECT_EXPORT_TRANSACTIONS_BAI2)
     public HttpResource generateBai2(@Body TransactionGetResponseBody request) {
@@ -131,6 +141,7 @@ public class Bai2ExportService {
         outputTransaction(out, t, accountTotals, t.getCreditDebitIndicator() == CreditDebitIndicator.CRDT, account);
     }
 
+    @SneakyThrows
     private void outputTransaction(Formatter out, 
                                    TransactionItem t, 
                                    Totals accountTotals, 
@@ -143,19 +154,24 @@ public class Bai2ExportService {
 
         accountTotals.addAmount(isCredit ? amount : -amount);
 
-        out.format("16,%03d,%d,0,%s,,",
-            getTransactionType(t, isCredit, account),
-            Math.abs(amount),
-            t.getId());
+        // Line type (16 is transaction), transaction type, amount, funds type (0=immediately available), bank reference number, customer reference number
+        String transactionText = String.format("16,%03d,%d,0,%s,%s,",
+                getTransactionType(t, isCredit, account),
+                Math.abs(amount),
+                getBankTransactionReferenceNumber(t),
+                getCustomerTransactionReferenceNumber(t));
             
         var optionalText = getTransactionText(t, account, isCredit);
         if (optionalText.isPresent()) {
-            out.format("%s%n", optionalText.get().get(0));
+            // If text is present, pad all the way to the end of the line
+            transactionText = StringUtils.rightPad(transactionText, bai2RecordSize, PADDING_CHAR);
+            out.out().append(transactionText).append("\n");
             optionalText.get().stream()
-            .skip(1)
-            .forEach(s -> {out.format("88,%s%n", s); accountTotals.incrementCount();});
+                .forEach(s -> {out.format("88,%s%n", s); accountTotals.incrementCount();});
         } else {
-            out.format("/%n");
+            // If text is not present, terminate and then pad
+            transactionText = StringUtils.rightPad(transactionText + "/", bai2RecordSize, PADDING_CHAR);
+            out.out().append(transactionText).append("\n");
         }
     }
 
@@ -171,9 +187,38 @@ public class Bai2ExportService {
      * @return BAI2 transaction type value
      */
     protected int getTransactionType(TransactionItem xaction, boolean isCredit, AccountArrangementItem account) {
+        // Will need to call a service to get full tx details
         assert account != null; // Mostly to make SonarQube happy, but we expect this 
         assert xaction != null; // Mostly to make SonarQube happy, but we expect this
         return isCredit ? TT_MISC_CREDIT : TT_MISC_DEBIT;
+    }
+
+
+    /**
+     * This method returns the bank transaction reference number.
+     * By default, it will return the transaction id. It may be changed for
+     * customer-specific applications.
+     *
+     * @param xaction the <code>TransactionItem</code> being described by the text
+     *
+     * @return bank transaction reference number
+     */
+    private String getBankTransactionReferenceNumber(TransactionItem xaction) {
+        assert xaction != null; // Mostly to make SonarQube happy, but we expect this
+        return "0";
+    }
+
+    /**
+     * This method returns the customer transaction reference number.
+     * By default, it will return the transaction id. It may be changed for
+     * customer-specific applications.
+     *
+     * @param xaction the <code>TransactionItem</code> being described by the text
+     *
+     * @return customer transaction reference number
+     */
+    private String getCustomerTransactionReferenceNumber(TransactionItem xaction) {
+        return xaction.getId();
     }
 
     /*
@@ -193,37 +238,83 @@ public class Bai2ExportService {
         assert account != null; // Mostly to make SonarQube happy, but we expect this
         assert isCredit != !isCredit; // Entirely to make SonarQube happy
         assert t.getDescription() != null : "TransactionItem::getDescription has a validator of not null";
-        return Optional.of(List.of(t.getDescription()));
+
+        final String fullDescription = t.getDescription();
+        ArrayList<String> allTheLines = new ArrayList<>();
+
+        // Respect record and block sizes
+        for (int i = 1; i < bai2BlockSize; i++) { // deliberately start at 1, since 1 is the tx (type 16) record
+            // For each i, generate a line
+            // Grab the characters that should be in this line, respecting the length limit
+            int fragmentStart = (i-1)*(bai2RecordSize-3); // the -3 accounts for the 3 chars in "88," that begins the line
+            int fragmentEnd = i*(bai2RecordSize-3);
+            String fragment;
+
+            if (fullDescription.length() >= fragmentEnd) {
+                // There is enough in the description to take a substring and complete the line
+                fragment = fullDescription.substring(fragmentStart, fragmentEnd);
+            } else if (fullDescription.length() >= fragmentStart) {
+                // There is not enough in the description to make a complete line. Take what we can and pad the rest
+                fragment = fullDescription.substring(fragmentStart) + "/";
+                fragment = StringUtils.rightPad(fragment, bai2RecordSize-3, PADDING_CHAR);
+            } else {
+                // We are beyond the end of the description. This note does not fill the max block size, so
+                //  break out of the loop.
+                break;
+            }
+
+            // Add this line onto the list of lines
+            allTheLines.add(fragment);
+        }
+
+        return Optional.of(allTheLines);
     }
 
+    @SneakyThrows
     private void outputAccountFooter(Formatter out, Totals accountTotals) {
-        out.format("49,%d,%d/%n", accountTotals.getAmount(), accountTotals.getCount());
+        var formattedString = String.format("49,%d,%d/", accountTotals.getAmount(), accountTotals.getCount());
+        formattedString = StringUtils.rightPad(formattedString, bai2RecordSize, PADDING_CHAR);
+        out.out().append(formattedString).append("\n");
     }
 
+    @SneakyThrows
     private void outputAccountHeader(Formatter out, String bBan, String currency) {
-        out.format("03,%s,%s,,,,,/%n", bBan, currency);
+        var formattedString = String.format("03,%s,%s,,,,,/", bBan, currency);
+        formattedString = StringUtils.rightPad(formattedString, bai2RecordSize, PADDING_CHAR);
+        out.out().append(formattedString).append("\n");
     }
 
+    @SneakyThrows
     private void outputGroupFooter(Formatter out, int numAccounts, Totals fileTotals) {
-        out.format("98,%d,%d,%d/%n", fileTotals.getAmount(), numAccounts, fileTotals.getCount());
+        var formattedString = String.format("98,%d,%d,%d/", fileTotals.getAmount(), numAccounts, fileTotals.getCount());
+        formattedString = StringUtils.rightPad(formattedString, bai2RecordSize, PADDING_CHAR);
+        out.out().append(formattedString).append("\n");
     }
 
+    @SneakyThrows
     private void outputGroupHeader(Formatter out) {
-        out.format("02,%S,%s,1,%3$ty%3$tm%3$td,%3$tH%3$tM,,2/%n",
-            bai2BankName,
-            routingNumber,
-            new Date());
+        var formattedString = String.format("02,%S,%s,1,%3$ty%3$tm%3$td,%3$tH%3$tM,,2/", bai2BankName, routingNumber, new Date());
+        formattedString = StringUtils.rightPad(formattedString, bai2RecordSize, PADDING_CHAR);
+        out.out().append(formattedString).append("\n");
     }
 
+    @SneakyThrows
     private void outputFileFooter(Formatter out, Totals fileTotals) {
-        out.format("99,%d,1,%d/%n", fileTotals.getAmount(), fileTotals.getCount());
+        var formattedString = String.format("99,%d,1,%d/", fileTotals.getAmount(), fileTotals.getCount());
+        formattedString = StringUtils.rightPad(formattedString, bai2RecordSize, PADDING_CHAR);
+        out.out().append(formattedString).append("\n");
     }
 
+    @SneakyThrows
     private void outputFileHeader(Formatter out) {
-        out.format("01,%1$s,%1$s,%2$ty%2$tm%2$td,%2$tH%2$tM,%3$d,,,2/%n",
-            routingNumber,
-            new Date(),
-            FILE_ID.getAndIncrement());
+        var formattedString = String.format("01,%1$s,%1$s,%2$ty%2$tm%2$td,%2$tH%2$tM,%3$d,%4$d,%5$d,2/",
+                routingNumber,
+                new Date(),
+                FILE_ID.getAndIncrement(),
+                bai2RecordSize,
+                bai2BlockSize);
+        formattedString = StringUtils.rightPad(formattedString, bai2RecordSize, PADDING_CHAR);
+        out.out().append(formattedString).append("\n");
     }
 
     private List<AccountArrangementItem> getArrangementsByIds(List<String> arrangementIds) {
@@ -231,6 +322,11 @@ public class Bai2ExportService {
             return List.of();
         }
         return arrangementsApi.getArrangements(null, arrangementIds, null).getArrangementElements();
+    }
+
+    // For use by unit tests.
+    protected int getRecordSize() {
+        return this.bai2RecordSize;
     }
 
     @Data

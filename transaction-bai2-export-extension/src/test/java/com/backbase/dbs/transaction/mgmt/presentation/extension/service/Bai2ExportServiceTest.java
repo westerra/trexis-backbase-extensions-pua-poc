@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +23,7 @@ import com.backbase.presentation.transaction.rest.spec.v2.transactions.Transacti
 import com.backbase.dbs.transaction.api.client.v2.model.CreditDebitIndicator;
 import com.backbase.dbs.transaction.api.client.v2.model.Currency;
 
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -50,20 +52,31 @@ class Bai2ExportServiceTest {
 
         String bai2 = ((Bai2Resource)service.generateBai2(tgrb)).getAsString();
         String[] lines = bai2.split("\n");
-        assertEquals(11, lines.length);
-        assertTrue(lines[0].matches("01,987654321,987654321,\\d{6},\\d{4},1234,,,2/"));
+        System.out.println(bai2);
+        assertEquals(17, lines.length);
+        // Check recordsize of every line
+        checkRecordLength(lines);
+        // Now that recordsize has been checked, perform the rest of our tests with padding removed.
+        lines = getLinesWithPaddingRemoved(lines);
+        assertTrue(lines[0].matches("01,987654321,987654321,\\d{6},\\d{4},1234,\\d{2},\\d{2},2/"));
         assertTrue(lines[1].matches("02,BANK_NAME_NOT_CONFIGURED,987654321,1,\\d{6},\\d{4},,2/"));
         assertEquals("03,46240613071-1,USD,,,,,/", lines[2]);        
 
         checkTransactionLine(lines[3], "409", "1000", "Note increase - transfer");
-        checkTransactionLine(lines[4], "409", "1200", "Note increase - transfer");
-        checkTransactionLine(lines[5], "108", "2200", "Special payment");
-        checkTransactionLine(lines[6], "409", "100000", "Note increase - transfer");
-        checkTransactionLine(lines[7], "409", "10000", "Note increase - transfer");
-
-        assertEquals("49,-110000,7/", lines[8]);
-        assertEquals("98,-110000,1,9/", lines[9]);
-        assertEquals("99,-110000,1,11/", lines[10]);
+        //checkTransactionLine(lines[4], "409", "1200", "Note increase - transfer");
+        assertEquals("88,Note increase - transfer/", lines[4]);
+        checkTransactionLine(lines[5], "409", "1200", "");
+        assertEquals("88,Note increase - transfer with a really really long note that is definitely go", lines[6]);
+        assertEquals("88,ing to cause things to break into multiple lines for unit test purposes/", lines[7]);
+        checkTransactionLine(lines[8], "108", "2200", "");
+        assertEquals("88,Special payment/", lines[9]);
+        checkTransactionLine(lines[10], "409", "100000", "");
+        assertEquals("88,Note increase - transfer/", lines[11]);
+        checkTransactionLine(lines[12], "409", "10000", "");
+        assertEquals("88,Note increase - transfer/", lines[13]);
+        assertEquals("49,-110000,13/", lines[14]);
+        assertEquals("98,-110000,1,15/", lines[15]);
+        assertEquals("99,-110000,1,17/", lines[16]);
     }
 
     @Test
@@ -76,7 +89,11 @@ class Bai2ExportServiceTest {
         String[] lines = bai2.split("\n");
         System.out.println(bai2);
         assertEquals(4, lines.length);
-        assertTrue(lines[0].matches("01,987654321,987654321,\\d{6},\\d{4},1234,,,2/"), lines[0]);
+        // Check recordsize of every line
+        checkRecordLength(lines);
+        // Now that recordsize has been checked, perform the rest of our tests with padding removed.
+        lines = getLinesWithPaddingRemoved(lines);
+        assertTrue(lines[0].matches("01,987654321,987654321,\\d{6},\\d{4},1234,\\d{2},\\d{2},2/"), lines[0]);
         assertTrue(lines[1].matches("02,BANK_NAME_NOT_CONFIGURED,987654321,1,\\d{6},\\d{4},,2/"), lines[1]);
         assertEquals("98,0,0,2/", lines[2], lines[2]);
         assertEquals("99,0,1,4/", lines[3], lines[3]);
@@ -89,26 +106,33 @@ class Bai2ExportServiceTest {
         programArrangementApi(tgrb.getTransactionItemList());
         service = new MultiLineExport(arrangementsApi);
 
+        // We will need better test data here, so that the tx note actually spans multiple lines
         String bai2 = ((Bai2Resource)service.generateBai2(tgrb)).getAsString();
 
         String[] lines = bai2.split("\n");
 
-        assertEquals(12, lines.length);
-        assertTrue(lines[0].matches("01,987654321,987654321,\\d{6},\\d{4},1234,,,2/"));
+        System.out.println(bai2);
+
+        assertEquals(11, lines.length);
+        // Check recordsize of every line
+        checkRecordLength(lines);
+        // Now that recordsize has been checked, perform the rest of our tests with padding removed.
+        lines = getLinesWithPaddingRemoved(lines);
+
+        assertTrue(lines[0].matches("01,987654321,987654321,\\d{6},\\d{4},1234,\\d{2},\\d{2},2/"));
         assertTrue(lines[1].matches("02,BANK_NAME_NOT_CONFIGURED,987654321,1,\\d{6},\\d{4},,2/"));
         assertEquals("03,46240613071-1,USD,,,,,/", lines[2]);        
 
         checkTransactionLine(lines[3], "999", "1000", "Note increase - transfer");
-        assertEquals("88,Advance", lines[4]);
-        assertEquals("88,Debit", lines[5]);
+        assertEquals("88,Note increase - transfer/", lines[4]);
 
-        checkTransactionLine(lines[6], "999", "1200", "Note increase - transfer");
-        assertEquals("88,Advance", lines[7]);
-        assertEquals("88,Debit", lines[8]);
+        checkTransactionLine(lines[5], "999", "1200", "Note increase - transfer");
+        assertEquals("88,Note increase - transfer with a really really long note that is definitely go", lines[6]);
+        assertEquals("88,ing to cause things to break into multiple lines for unit test purposes/", lines[7]);
 
-        assertEquals("49,-2200,8/", lines[9]);
-        assertEquals("98,-2200,1,10/", lines[10]);
-        assertEquals("99,-2200,1,12/", lines[11]);
+        assertEquals("49,-2200,7/", lines[8]);
+        assertEquals("98,-2200,1,9/", lines[9]);
+        assertEquals("99,-2200,1,11/", lines[10]);
     }
 
     @Test
@@ -122,7 +146,11 @@ class Bai2ExportServiceTest {
         String[] lines = bai2.split("\n");
         System.out.println(bai2);
         assertEquals(11, lines.length);
-        assertTrue(lines[0].matches("01,987654321,987654321,\\d{6},\\d{4},1234,,,2/"));
+        // Check recordsize of every line
+        checkRecordLength(lines);
+        // Now that recordsize has been checked, perform the rest of our tests with padding removed.
+        lines = getLinesWithPaddingRemoved(lines);
+        assertTrue(lines[0].matches("01,987654321,987654321,\\d{6},\\d{4},1234,\\d{2},\\d{2},2/"));
         assertTrue(lines[1].matches("02,BANK_NAME_NOT_CONFIGURED,987654321,1,\\d{6},\\d{4},,2/"));
         assertEquals("03,46240613071-1,USD,,,,,/", lines[2]);        
 
@@ -139,7 +167,7 @@ class Bai2ExportServiceTest {
 
     private void checkTransactionLine(String line, String code, String amount, String note) {
         assertTrue(line.startsWith("16," + code + "," + amount + ",0"));
-        assertTrue(line.endsWith("," + note));
+        assertTrue(line.endsWith(",") || line.endsWith(",/"));
     }
     private TransactionGetResponseBody getFirstX(int x) throws IOException {
         final List<TransactionItem> xaction;
@@ -156,6 +184,18 @@ class Bai2ExportServiceTest {
         tgrb.setTotalElements((long)xaction.size());
 
         return tgrb;
+    }
+
+    private void checkRecordLength(String[] lines) {
+        for (String thisLine: lines) { // Check recordsize of every line
+            assertEquals(service.getRecordSize(), thisLine.length());
+        }
+    }
+
+    private String[] getLinesWithPaddingRemoved(String[] paddedLines) {
+        return Arrays.stream(paddedLines)
+            .map(line -> StringUtils.stripEnd(line, String.valueOf(Bai2ExportService.PADDING_CHAR)))
+            .toArray(String[]::new);
     }
 
     private Path getCsvPath() {
@@ -218,11 +258,12 @@ class MultiLineExport extends Bai2ExportService {
         super(arrangementsApi);
     }
 
-    @Override
-    protected Optional<List<String>> getTransactionText(TransactionItem t, AccountArrangementItem account,
-            boolean isCredit) {
-        return Optional.of(List.of(t.getDescription(), t.getType(), t.getTypeGroup()));
-    }
+// Method has complex logic now, and can't be overridden for testing anymore
+//    @Override
+//    protected Optional<List<String>> getTransactionText(TransactionItem t, AccountArrangementItem account,
+//            boolean isCredit) {
+//        return Optional.of(List.of(t.getDescription(), t.getType(), t.getTypeGroup()));
+//    }
 
     @Override
     protected int getTransactionType(TransactionItem xaction, boolean isCredit, AccountArrangementItem account) {
