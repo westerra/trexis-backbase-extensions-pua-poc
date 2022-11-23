@@ -218,7 +218,7 @@ public class Bai2ExportService {
      * @return customer transaction reference number
      */
     private String getCustomerTransactionReferenceNumber(TransactionItem xaction) {
-        return xaction.getId();
+        return (null != xaction.getCheckSerialNumber()) ? xaction.getCheckSerialNumber().toString() : "";
     }
 
     /*
@@ -239,73 +239,49 @@ public class Bai2ExportService {
         assert isCredit != !isCredit; // Entirely to make SonarQube happy
         assert t.getDescription() != null : "TransactionItem::getDescription has a validator of not null";
 
-        final String fullDescription = t.getDescription();
+        String remainingDescription = t.getDescription();
+        int maxNoteSize = bai2RecordSize - 3; // Account for the "88," that prepends all note lines
         ArrayList<String> allTheLines = new ArrayList<>();
 
         // Respect record and block sizes
         for (int i = 1; i < bai2BlockSize; i++) { // deliberately start at 1, since 1 is the tx (type 16) record
-            // For each i, generate a line
-            // Grab the characters that should be in this line, respecting the length limit
-            int fragmentStart = (i-1)*(bai2RecordSize-3); // the -3 accounts for the 3 chars in "88," that begins the line
-            int fragmentEnd = i*(bai2RecordSize-3);
-            String fragment;
-
-            if (fullDescription.length() >= fragmentEnd) {
-                // There is enough in the description to take a substring and complete the line
-                fragment = fullDescription.substring(fragmentStart, fragmentEnd);
-            } else if (fullDescription.length() >= fragmentStart) {
-                // There is not enough in the description to make a complete line. Take what we can and pad the rest
-                fragment = fullDescription.substring(fragmentStart) + "/";
-                fragment = StringUtils.rightPad(fragment, bai2RecordSize-3, PADDING_CHAR);
+            if (remainingDescription.length() > maxNoteSize) {
+                allTheLines.add(remainingDescription.substring(0, maxNoteSize)); // Add this part of the note in its entirety
+                remainingDescription = remainingDescription.substring(maxNoteSize); // Remove the already-added part from the remaining note
             } else {
-                // We are beyond the end of the description. This note does not fill the max block size, so
-                //  break out of the loop.
+                allTheLines.add(StringUtils.rightPad(remainingDescription + "/", maxNoteSize, PADDING_CHAR)); // Add everything that remains, and terminate
                 break;
             }
-
-            // Add this line onto the list of lines
-            allTheLines.add(fragment);
         }
 
         return Optional.of(allTheLines);
     }
 
-    @SneakyThrows
     private void outputAccountFooter(Formatter out, Totals accountTotals) {
         var formattedString = String.format("49,%d,%d/", accountTotals.getAmount(), accountTotals.getCount());
-        formattedString = StringUtils.rightPad(formattedString, bai2RecordSize, PADDING_CHAR);
-        out.out().append(formattedString).append("\n");
+        padAndOutput(out, formattedString);
     }
 
-    @SneakyThrows
     private void outputAccountHeader(Formatter out, String bBan, String currency) {
         var formattedString = String.format("03,%s,%s,,,,,/", bBan, currency);
-        formattedString = StringUtils.rightPad(formattedString, bai2RecordSize, PADDING_CHAR);
-        out.out().append(formattedString).append("\n");
+        padAndOutput(out, formattedString);
     }
 
-    @SneakyThrows
     private void outputGroupFooter(Formatter out, int numAccounts, Totals fileTotals) {
         var formattedString = String.format("98,%d,%d,%d/", fileTotals.getAmount(), numAccounts, fileTotals.getCount());
-        formattedString = StringUtils.rightPad(formattedString, bai2RecordSize, PADDING_CHAR);
-        out.out().append(formattedString).append("\n");
+        padAndOutput(out, formattedString);
     }
 
-    @SneakyThrows
     private void outputGroupHeader(Formatter out) {
         var formattedString = String.format("02,%S,%s,1,%3$ty%3$tm%3$td,%3$tH%3$tM,,2/", bai2BankName, routingNumber, new Date());
-        formattedString = StringUtils.rightPad(formattedString, bai2RecordSize, PADDING_CHAR);
-        out.out().append(formattedString).append("\n");
+        padAndOutput(out, formattedString);
     }
 
-    @SneakyThrows
     private void outputFileFooter(Formatter out, Totals fileTotals) {
         var formattedString = String.format("99,%d,1,%d/", fileTotals.getAmount(), fileTotals.getCount());
-        formattedString = StringUtils.rightPad(formattedString, bai2RecordSize, PADDING_CHAR);
-        out.out().append(formattedString).append("\n");
+        padAndOutput(out, formattedString);
     }
 
-    @SneakyThrows
     private void outputFileHeader(Formatter out) {
         var formattedString = String.format("01,%1$s,%1$s,%2$ty%2$tm%2$td,%2$tH%2$tM,%3$d,%4$d,%5$d,2/",
                 routingNumber,
@@ -313,8 +289,7 @@ public class Bai2ExportService {
                 FILE_ID.getAndIncrement(),
                 bai2RecordSize,
                 bai2BlockSize);
-        formattedString = StringUtils.rightPad(formattedString, bai2RecordSize, PADDING_CHAR);
-        out.out().append(formattedString).append("\n");
+        padAndOutput(out, formattedString);
     }
 
     private List<AccountArrangementItem> getArrangementsByIds(List<String> arrangementIds) {
@@ -322,6 +297,12 @@ public class Bai2ExportService {
             return List.of();
         }
         return arrangementsApi.getArrangements(null, arrangementIds, null).getArrangementElements();
+    }
+
+    @SneakyThrows
+    private void padAndOutput(Formatter out, String formattedString) {
+        formattedString = StringUtils.rightPad(formattedString, bai2RecordSize, PADDING_CHAR);
+        out.out().append(formattedString).append("\n");
     }
 
     // For use by unit tests.
