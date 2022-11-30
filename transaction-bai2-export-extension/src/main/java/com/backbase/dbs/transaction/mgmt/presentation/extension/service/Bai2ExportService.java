@@ -23,8 +23,10 @@ import com.backbase.dbs.transaction.mgmt.presentation.domain.TransactionGetRespo
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
+import lombok.SneakyThrows;
 import org.apache.camel.Body;
 import org.apache.camel.Consume;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.resource.HttpResource;
@@ -41,6 +43,8 @@ public class Bai2ExportService {
     private static final int TT_MISC_CREDIT = 108;
     private static final int TT_MISC_DEBIT = 409;
 
+    protected static final char PADDING_CHAR = ' ';
+
     private final ArrangementsApi arrangementsApi;
 
     @Value("${backbase.transaction.ofx.export.bankRoutingNumber:123456789}")
@@ -48,6 +52,12 @@ public class Bai2ExportService {
 
     @Value("${backbase.transaction.ofx.export.bai2BankName:BANK}")
     private String bai2BankName = "bank_name_not_configured";
+
+    @Value("${backbase.transaction.ofx.export.bai2BlockSize:80}")
+    private Integer bai2BlockSize = 80; // change to int
+
+    @Value("${backbase.transaction.ofx.export.bai2RecordSize:80}")
+    private Integer bai2RecordSize = 80;
 
     @Consume(DIRECT_EXPORT_TRANSACTIONS_BAI2)
     public HttpResource generateBai2(@Body TransactionGetResponseBody request) {
@@ -131,6 +141,7 @@ public class Bai2ExportService {
         outputTransaction(out, t, accountTotals, t.getCreditDebitIndicator() == CreditDebitIndicator.CRDT, account);
     }
 
+    @SneakyThrows
     private void outputTransaction(Formatter out, 
                                    TransactionItem t, 
                                    Totals accountTotals, 
@@ -143,19 +154,24 @@ public class Bai2ExportService {
 
         accountTotals.addAmount(isCredit ? amount : -amount);
 
-        out.format("16,%03d,%d,0,%s,,",
-            getTransactionType(t, isCredit, account),
-            Math.abs(amount),
-            t.getId());
+        // Line type (16 is transaction), transaction type, amount, funds type (0=immediately available), bank reference number, customer reference number
+        String transactionText = String.format("16,%03d,%d,0,%s,%s,",
+                getTransactionType(t, isCredit, account),
+                Math.abs(amount),
+                getBankTransactionReferenceNumber(t),
+                getCustomerTransactionReferenceNumber(t));
             
         var optionalText = getTransactionText(t, account, isCredit);
         if (optionalText.isPresent()) {
-            out.format("%s%n", optionalText.get().get(0));
+            // If text is present, pad all the way to the end of the line
+            transactionText = StringUtils.rightPad(transactionText, bai2RecordSize, PADDING_CHAR);
+            out.out().append(transactionText).append("\n");
             optionalText.get().stream()
-            .skip(1)
-            .forEach(s -> {out.format("88,%s%n", s); accountTotals.incrementCount();});
+                .forEach(s -> {out.format("88,%s%n", s); accountTotals.incrementCount();});
         } else {
-            out.format("/%n");
+            // If text is not present, terminate and then pad
+            transactionText = StringUtils.rightPad(transactionText + "/", bai2RecordSize, PADDING_CHAR);
+            out.out().append(transactionText).append("\n");
         }
     }
 
@@ -171,9 +187,38 @@ public class Bai2ExportService {
      * @return BAI2 transaction type value
      */
     protected int getTransactionType(TransactionItem xaction, boolean isCredit, AccountArrangementItem account) {
+        // Will need to call a service to get full tx details
         assert account != null; // Mostly to make SonarQube happy, but we expect this 
         assert xaction != null; // Mostly to make SonarQube happy, but we expect this
         return isCredit ? TT_MISC_CREDIT : TT_MISC_DEBIT;
+    }
+
+
+    /**
+     * This method returns the bank transaction reference number.
+     * By default, it will return the transaction id. It may be changed for
+     * customer-specific applications.
+     *
+     * @param xaction the <code>TransactionItem</code> being described by the text
+     *
+     * @return bank transaction reference number
+     */
+    private String getBankTransactionReferenceNumber(TransactionItem xaction) {
+        assert xaction != null; // Mostly to make SonarQube happy, but we expect this
+        return "0";
+    }
+
+    /**
+     * This method returns the customer transaction reference number.
+     * By default, it will return the transaction id. It may be changed for
+     * customer-specific applications.
+     *
+     * @param xaction the <code>TransactionItem</code> being described by the text
+     *
+     * @return customer transaction reference number
+     */
+    private String getCustomerTransactionReferenceNumber(TransactionItem xaction) {
+        return (null != xaction.getCheckSerialNumber()) ? xaction.getCheckSerialNumber().toString() : "";
     }
 
     /*
@@ -193,37 +238,58 @@ public class Bai2ExportService {
         assert account != null; // Mostly to make SonarQube happy, but we expect this
         assert isCredit != !isCredit; // Entirely to make SonarQube happy
         assert t.getDescription() != null : "TransactionItem::getDescription has a validator of not null";
-        return Optional.of(List.of(t.getDescription()));
+
+        String remainingDescription = t.getDescription();
+        int maxNoteSize = bai2RecordSize - 3; // Account for the "88," that prepends all note lines
+        ArrayList<String> allTheLines = new ArrayList<>();
+
+        // Respect record and block sizes
+        for (int i = 1; i < bai2BlockSize; i++) { // deliberately start at 1, since 1 is the tx (type 16) record
+            if (remainingDescription.length() > maxNoteSize) {
+                allTheLines.add(remainingDescription.substring(0, maxNoteSize)); // Add this part of the note in its entirety
+                remainingDescription = remainingDescription.substring(maxNoteSize); // Remove the already-added part from the remaining note
+            } else {
+                allTheLines.add(StringUtils.rightPad(remainingDescription + "/", maxNoteSize, PADDING_CHAR)); // Add everything that remains, and terminate
+                break;
+            }
+        }
+
+        return Optional.of(allTheLines);
     }
 
     private void outputAccountFooter(Formatter out, Totals accountTotals) {
-        out.format("49,%d,%d/%n", accountTotals.getAmount(), accountTotals.getCount());
+        var formattedString = String.format("49,%d,%d/", accountTotals.getAmount(), accountTotals.getCount());
+        padAndOutput(out, formattedString);
     }
 
     private void outputAccountHeader(Formatter out, String bBan, String currency) {
-        out.format("03,%s,%s,,,,,/%n", bBan, currency);
+        var formattedString = String.format("03,%s,%s,,,,,/", bBan, currency);
+        padAndOutput(out, formattedString);
     }
 
     private void outputGroupFooter(Formatter out, int numAccounts, Totals fileTotals) {
-        out.format("98,%d,%d,%d/%n", fileTotals.getAmount(), numAccounts, fileTotals.getCount());
+        var formattedString = String.format("98,%d,%d,%d/", fileTotals.getAmount(), numAccounts, fileTotals.getCount());
+        padAndOutput(out, formattedString);
     }
 
     private void outputGroupHeader(Formatter out) {
-        out.format("02,%S,%s,1,%3$ty%3$tm%3$td,%3$tH%3$tM,,2/%n",
-            bai2BankName,
-            routingNumber,
-            new Date());
+        var formattedString = String.format("02,%S,%s,1,%3$ty%3$tm%3$td,%3$tH%3$tM,,2/", bai2BankName, routingNumber, new Date());
+        padAndOutput(out, formattedString);
     }
 
     private void outputFileFooter(Formatter out, Totals fileTotals) {
-        out.format("99,%d,1,%d/%n", fileTotals.getAmount(), fileTotals.getCount());
+        var formattedString = String.format("99,%d,1,%d/", fileTotals.getAmount(), fileTotals.getCount());
+        padAndOutput(out, formattedString);
     }
 
     private void outputFileHeader(Formatter out) {
-        out.format("01,%1$s,%1$s,%2$ty%2$tm%2$td,%2$tH%2$tM,%3$d,,,2/%n",
-            routingNumber,
-            new Date(),
-            FILE_ID.getAndIncrement());
+        var formattedString = String.format("01,%1$s,%1$s,%2$ty%2$tm%2$td,%2$tH%2$tM,%3$d,%4$d,%5$d,2/",
+                routingNumber,
+                new Date(),
+                FILE_ID.getAndIncrement(),
+                bai2RecordSize,
+                bai2BlockSize);
+        padAndOutput(out, formattedString);
     }
 
     private List<AccountArrangementItem> getArrangementsByIds(List<String> arrangementIds) {
@@ -231,6 +297,17 @@ public class Bai2ExportService {
             return List.of();
         }
         return arrangementsApi.getArrangements(null, arrangementIds, null).getArrangementElements();
+    }
+
+    @SneakyThrows
+    private void padAndOutput(Formatter out, String formattedString) {
+        formattedString = StringUtils.rightPad(formattedString, bai2RecordSize, PADDING_CHAR);
+        out.out().append(formattedString).append("\n");
+    }
+
+    // For use by unit tests.
+    protected int getRecordSize() {
+        return this.bai2RecordSize;
     }
 
     @Data
