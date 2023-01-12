@@ -19,6 +19,8 @@
         <dbs.version>2022.01-LTS</dbs.version>
         <service-sdk.version>13.4.0</service-sdk.version>
 
+        <trexis-bom.version>1.0.1.LTS-SNAPSHOT</trexis-bom.version>
+
         <!-- Code coverage -->
         <jacoco-maven.version>0.8.8</jacoco-maven.version>
         <!-- JUnit 5 requires Surefire version 2.22.0 or higher -->
@@ -41,6 +43,13 @@
                 <groupId>com.backbase.buildingblocks</groupId>
                 <artifactId>service-sdk-starter-core</artifactId>
                 <version>${service-sdk.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>net.trexis.experts</groupId>
+                <artifactId>experts-bom</artifactId>
+                <version>${trexis-bom.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -85,6 +94,52 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack-cursor-openapi-spec</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>net.trexis.experts.specs</groupId>
+                                    <artifactId>cursor-api</artifactId>
+                                    <outputDirectory>${project.build.directory}/yaml/cursor/</outputDirectory>
+                                    <overWrite>true</overWrite>
+                                </artifactItem>
+                            </artifactItems>
+                            <includes>**/*.yaml, **/*.json</includes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.backbase.oss</groupId>
+                <artifactId>boat-maven-plugin</artifactId>
+                <version>${boat.maven.plugin-version}</version>
+                <executions>
+                    <!-- Generate OpenAPI interface stubs. -->
+                    <execution>
+                        <id>generate-cursor-service-api</id>
+                        <goals>
+                            <goal>generate-rest-template-embedded</goal>
+                        </goals>
+                        <phase>generate-sources</phase>
+                        <configuration>
+                            <inputSpec>
+                                ${basedir}/target/yaml/cursor/service-api-v1.yaml
+                            </inputSpec>
+                            <apiPackage>net.trexis.experts.cursor.cursor-service.api.client.v2</apiPackage>
+                            <modelPackage>net.trexis.experts.cursor.cursor-service.v2.model</modelPackage>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
