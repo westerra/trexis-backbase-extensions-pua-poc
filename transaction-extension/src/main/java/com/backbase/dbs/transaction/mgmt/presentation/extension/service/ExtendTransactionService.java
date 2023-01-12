@@ -56,8 +56,9 @@ public class ExtendTransactionService extends TransactionService {
     @Transactional
     public TransactionsGetResponseBody getTransactions(ParameterHolder parameterHolder) {
 
+        //Only do if enabled
         //If the sub is not present, then this is likely a call from a service, and we do not want to delay responses
-        if(!securityContextUtil.getUserTokenClaim("sub", String.class).isPresent())
+        if(!transactionManagerConfig.isEnabled() || !securityContextUtil.getUserTokenClaim("sub", String.class).isPresent())
             return super.getTransactions(parameterHolder);
 
         List<AccountArrangementItem> arrangementsByIds = getArrangementsByIds(parameterHolder.getArrangementIds());
@@ -79,6 +80,7 @@ public class ExtendTransactionService extends TransactionService {
 
                 var ingestionStartDateTime = parse(arrangementCursor.getStartDateTime());
 
+                log.info("Cursor status is {} for arrangementExternalId {}, started at {}", arrangementCursor.getStatus(), arrangementExternalId, ingestionStartDateTime);
                 while (arrangementCursor.getStatus() == IN_PROGRESS) {
                     log.info("Ingestion is still in progress for arrangementExternalId {}, started at {}", arrangementExternalId, ingestionStartDateTime);
 
@@ -89,7 +91,7 @@ public class ExtendTransactionService extends TransactionService {
                         break;
                     }
 
-                    log.info("Sleeping for {} seconds before checking again", transactionManagerConfig.getPollIntervalSeconds());
+                    log.info("Sleeping for {} seconds before checking again. Maximum waiting time is {}", transactionManagerConfig.getPollIntervalSeconds(), transactionManagerConfig.getTimeWaitSeconds());
                     try {
                         // Multiply by 1000 for millis instead of seconds
                         sleep(1000L * transactionManagerConfig.getPollIntervalSeconds());
