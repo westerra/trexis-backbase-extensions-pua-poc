@@ -1,5 +1,10 @@
 ##Change Log for extensions
 
+### January 12, 2023
+Added extension to transactions for delaying the response while the given arrangement is still being ingested
+This feature can be enabled/disabled with the configuration, the default is true:  
+``transaction-extension.transactions.waitOnCursor: false``
+
 ### October 11, 2022
 Introduce extension to sync arrangement aliases back to the core via Finite.  It is disabled by default.
 ```yml
