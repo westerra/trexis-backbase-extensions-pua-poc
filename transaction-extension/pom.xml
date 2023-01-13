@@ -1,5 +1,5 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -9,31 +9,30 @@
     </parent>
 
     <groupId>net.trexis.experts</groupId>
-    <artifactId>contact-manager-extension</artifactId>
+    <artifactId>transaction-extension</artifactId>
     <version>1.0.0.2022.08-SNAPSHOT</version>
-    <name>Trexis :: Backbase :: Contact Manager Extension</name>
-    <description>Extension for dbs contact-manager that is intended to be overlaid on the BackBase build artifact.</description>
+    <name>Trexis :: Backbase :: Transaction Extension</name>
+    <description>Extension for transactions that is intended to be overlaid on the BackBase build artifact.</description>
 
     <properties>
         <java.version>11</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
 
-        <lombok.version>1.18.12</lombok.version>
+        <lombok.version>1.18.22</lombok.version>
 
-        <dbs.version>2022.08-LTS</dbs.version>
-        <service-sdk.version>14.2.0</service-sdk.version>
+        <boat.maven.plugin-version>0.15.8</boat.maven.plugin-version>
 
-        <!-- treXis -->
         <trexis-bom.version>1.0.1.2022.08-SNAPSHOT</trexis-bom.version>
 
         <!-- Code coverage -->
         <jacoco-maven.version>0.8.8</jacoco-maven.version>
+        <!-- JUnit 5 requires Surefire version 2.22.0 or higher -->
+        <apache.surefire.version>3.0.0-M7</apache.surefire.version>
         <jacoco.ut.execution.data.file>${project.build.directory}/coverage-reports/jacoco.exec</jacoco.ut.execution.data.file>
-        <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco-ut/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
-        <maven-surefire-plugin.version>3.0.0-M7</maven-surefire-plugin.version>
-    </properties>
+        <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 
+    </properties>
 
     <dependencyManagement>
         <dependencies>
@@ -62,9 +61,10 @@
     </dependencyManagement>
 
     <dependencies>
+        <!-- BACKBASE -->
         <dependency>
-            <groupId>com.backbase.dbs.contact</groupId>
-            <artifactId>contact-manager</artifactId>
+            <groupId>com.backbase.dbs.transaction</groupId>
+            <artifactId>transaction-manager</artifactId>
             <classifier>classes</classifier>
             <type>jar</type>
             <scope>provided</scope>
@@ -75,18 +75,6 @@
             <type>pom</type>
         </dependency>
 
-        <!-- treXis -->
-        <dependency>
-            <groupId>net.trexis.experts</groupId>
-            <artifactId>finite-client</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>javax.validation</groupId>
-                    <artifactId>validation-api</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
         <!--MISC-->
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -94,10 +82,11 @@
             <version>${lombok.version}</version>
             <scope>compile</scope>
         </dependency>
+
         <!-- Testing -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
+            <groupId>com.backbase.buildingblocks</groupId>
+            <artifactId>service-sdk-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -108,29 +97,77 @@
     </dependencies>
 
     <build>
-        <pluginManagement>
-            <!-- CODE COVERAGE -->
-            <plugins>
-                <plugin>
-                    <artifactId>maven-surefire-plugin</artifactId>
-                    <version>${maven-surefire-plugin.version}</version>
-                </plugin>
-            </plugins>
-        </pluginManagement>
-
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack-cursor-openapi-spec</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>net.trexis.experts.specs</groupId>
+                                    <artifactId>cursor-api</artifactId>
+                                    <outputDirectory>${project.build.directory}/yaml/cursor/</outputDirectory>
+                                    <overWrite>true</overWrite>
+                                </artifactItem>
+                            </artifactItems>
+                            <includes>**/*.yaml, **/*.json</includes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.backbase.oss</groupId>
+                <artifactId>boat-maven-plugin</artifactId>
+                <version>${boat.maven.plugin-version}</version>
+                <executions>
+                    <!-- Generate OpenAPI interface stubs. -->
+                    <execution>
+                        <id>generate-cursor-service-api</id>
+                        <goals>
+                            <goal>generate-rest-template-embedded</goal>
+                        </goals>
+                        <phase>generate-sources</phase>
+                        <configuration>
+                            <inputSpec>
+                                ${basedir}/target/yaml/cursor/service-api-v1.yaml
+                            </inputSpec>
+                            <apiPackage>net.trexis.experts.cursor.cursor-service.api.client.v2</apiPackage>
+                            <modelPackage>net.trexis.experts.cursor.cursor-service.v2.model</modelPackage>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${apache.surefire.version}</version>
+            </plugin>
             <!-- CODE COVERAGE -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${jacoco-maven.version}</version>
+                <configuration>
+                    <excludes>
+                        <!-- excludes go here; best for entire packaged -->
+                    </excludes>
+                    <dataFile>${jacoco.ut.execution.data.file}</dataFile>
+                    <destFile>${jacoco.ut.execution.data.file}</destFile>
+                </configuration>
                 <executions>
                     <execution>
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
                         <configuration>
-                            <destFile>${jacoco.ut.execution.data.file}</destFile>
+                            
                         </configuration>
                     </execution>
                     <execution>
@@ -166,10 +203,12 @@
                         <goals>
                             <goal>report</goal>
                         </goals>
+                        <configuration>
+                            <dataFile>${jacoco.ut.execution.data.file}</dataFile>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
-
         </plugins>
     </build>
 
