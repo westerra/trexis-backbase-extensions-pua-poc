@@ -57,8 +57,12 @@ public class ExtendTransactionService extends TransactionService {
     public TransactionsGetResponseBody getTransactions(ParameterHolder parameterHolder) {
 
         //Only do if enabled
+        if(!transactionManagerConfig.isEnabled()) {
+            log.info("Ingestion cursor progress check disabled");
+            return super.getTransactions(parameterHolder);
+        }
         //If the sub is not present, then this is likely a call from a service, and we do not want to delay responses
-        if(!transactionManagerConfig.isEnabled() || !securityContextUtil.getUserTokenClaim("sub", String.class).isPresent())
+        if(!securityContextUtil.getUserTokenClaim("sub", String.class).isPresent())
             return super.getTransactions(parameterHolder);
 
         List<AccountArrangementItem> arrangementsByIds = getArrangementsByIds(parameterHolder.getArrangementIds());
