@@ -16,6 +16,10 @@
         <lombok.version>1.18.12</lombok.version>
         <dbs.version>2022.01-LTS</dbs.version>
         <service-sdk.version>13.4.0</service-sdk.version>
+
+        <!-- treXis -->
+        <trexis-bom.version>1.0.1.LTS-SNAPSHOT</trexis-bom.version>
+
         <!-- Code coverage -->
         <jacoco-maven.version>0.8.8</jacoco-maven.version>
         <jacoco.ut.execution.data.file>${project.build.directory}/coverage-reports/jacoco.exec</jacoco.ut.execution.data.file>
@@ -43,7 +47,7 @@
             <dependency>
                 <groupId>net.trexis.experts</groupId>
                 <artifactId>experts-bom</artifactId>
-                <version>1.0.0.LTS-SNAPSHOT</version>
+                <version>${trexis-bom.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

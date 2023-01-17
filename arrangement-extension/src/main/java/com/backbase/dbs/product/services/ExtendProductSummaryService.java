@@ -1,4 +1,4 @@
-package com.backbase.dbs.product.summary;
+package com.backbase.dbs.product.services;
 
 import com.backbase.buildingblocks.backend.security.auth.config.SecurityContextUtil;
 import com.backbase.buildingblocks.presentation.errors.InternalServerErrorException;
@@ -6,6 +6,7 @@ import com.backbase.dbs.notifications.notification_service.api.client.v2.Notific
 import com.backbase.dbs.notifications.notification_service.v2.model.LegalEntity;
 import com.backbase.dbs.notifications.notification_service.v2.model.NotificationsPostRequestBody;
 import com.backbase.dbs.notifications.notification_service.v2.model.Routing;
+import com.backbase.dbs.product.config.ProductSummaryConfig;
 import com.backbase.dbs.product.Configurations;
 import com.backbase.dbs.product.ProductKindStorage;
 import com.backbase.dbs.product.arrangement.ArrangementService;
@@ -13,7 +14,9 @@ import com.backbase.dbs.product.balance.BalanceService;
 import com.backbase.dbs.product.clients.AccessControlClient;
 import com.backbase.dbs.product.clients.JwtContext;
 import com.backbase.dbs.product.repository.ArrangementJpaRepository;
-import com.backbase.dbs.product.summary.config.ProductSummaryConfig;
+import com.backbase.dbs.product.summary.ProductSummary;
+import com.backbase.dbs.product.summary.ProductSummaryFilter;
+import com.backbase.dbs.product.summary.ProductSummaryService;
 import com.backbase.dbs.user.api.client.v2.UserManagementApi;
 
 import java.time.LocalDateTime;
@@ -24,7 +27,6 @@ import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import net.trexis.experts.cursor.cursor_service.api.client.v2.CursorApi;
 import net.trexis.experts.cursor.cursor_service.v2.model.Cursor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
@@ -36,7 +38,6 @@ import static java.time.LocalDateTime.now;
 import static java.time.LocalDateTime.parse;
 import static java.util.Optional.ofNullable;
 import static net.trexis.experts.cursor.cursor_service.v2.model.Cursor.StatusEnum.IN_PROGRESS;
-import static net.trexis.experts.cursor.cursor_service.v2.model.Cursor.TypeEnum.LEGAL_ENTITY;
 import static net.trexis.experts.cursor.cursor_service.v2.model.Cursor.TypeEnum.USER;
 
 @Slf4j

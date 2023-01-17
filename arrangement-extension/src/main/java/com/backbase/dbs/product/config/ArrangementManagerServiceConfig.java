@@ -1,8 +1,8 @@
-package com.backbase.dbs.product.summary.config;
+package com.backbase.dbs.product.config;
 
 import com.backbase.buildingblocks.communication.client.ApiClientConfig;
-import com.backbase.dbs.notifications.notification_service.api.client.ApiClient;
-import com.backbase.dbs.notifications.notification_service.api.client.v2.NotificationsApi;
+import com.backbase.dbs.arrangement.arrangement_manager.api.client.ApiClient;
+import com.backbase.dbs.arrangement.arrangement_manager.api.client.v2.ArrangementsApi;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,18 +11,18 @@ import static com.backbase.buildingblocks.communication.http.HttpCommunicationCo
 import static java.lang.Boolean.TRUE;
 
 @Configuration
-@ConfigurationProperties("backbase.communication.services.notification-service")
-public class NotificationServiceRestClientConfig extends ApiClientConfig {
+@ConfigurationProperties("backbase.communication.services.arrangement-manager")
+public class ArrangementManagerServiceConfig extends ApiClientConfig {
 
-    public static final String SERVICE_ID = "notifications-service";
+    public static final String SERVICE_ID = "arrangement-manager";
 
-    public NotificationServiceRestClientConfig() {
+    public ArrangementManagerServiceConfig() {
         super(SERVICE_ID);
     }
 
     @Bean
-    public NotificationsApi notificationsApi() {
-        return new NotificationsApi(createApiClient());
+    public ArrangementsApi arrangementsApiApi() {
+        return new ArrangementsApi(createApiClient());
     }
 
     private ApiClient createApiClient() {
