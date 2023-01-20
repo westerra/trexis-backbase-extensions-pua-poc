@@ -12,4 +12,5 @@ public class TransactionManagerConfig {
     private int timeWaitSeconds = 15;
     private int pollIntervalSeconds = 1;
     private boolean continueAfterFailedCursorCheck = true;
+    private boolean dateFlipEnabled = false;
 }

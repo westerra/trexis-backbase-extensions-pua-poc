@@ -56,14 +56,27 @@ public class ExtendTransactionService extends TransactionService {
     @Transactional
     public TransactionsGetResponseBody getTransactions(ParameterHolder parameterHolder) {
 
+        var response = super.getTransactions(parameterHolder);
+
+        // Booking date flip extension
+        if (transactionManagerConfig.isDateFlipEnabled()) {
+            response.getTransactionItems().stream()
+                    .forEach(tx -> {
+                        var originalBookingDate = tx.getBookingDate();
+                        tx.setBookingDate(tx.getValueDate());
+                        tx.setValueDate(originalBookingDate);
+                    });
+        }
+
+        // Ingestion extension
         //Only do if enabled
         if(!transactionManagerConfig.isEnabled()) {
             log.info("Ingestion cursor progress check disabled");
-            return super.getTransactions(parameterHolder);
+            return response;
         }
         //If the sub is not present, then this is likely a call from a service, and we do not want to delay responses
         if(!securityContextUtil.getUserTokenClaim("sub", String.class).isPresent())
-            return super.getTransactions(parameterHolder);
+            return response;
 
         List<AccountArrangementItem> arrangementsByIds = getArrangementsByIds(parameterHolder.getArrangementIds());
         arrangementsByIds.stream()
@@ -106,7 +119,7 @@ public class ExtendTransactionService extends TransactionService {
                     arrangementCursor = getArrangementCursor(arrangementExternalId);
                 }
         });
-        return super.getTransactions(parameterHolder);
+        return response;
     }
 
     private List<AccountArrangementItem> getArrangementsByIds(List<String> arrangementIds) {
