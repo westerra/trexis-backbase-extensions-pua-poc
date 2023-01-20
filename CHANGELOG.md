@@ -1,5 +1,11 @@
 ##Change Log for extensions
 
+### January 19, 2023
+Added (another) extension to transactions to flip the booking date and value date on transactions before returning them.
+This feature may be turned on and off separately from the other transactions extension using the property below, which defaults to false.
+
+`transaction-extension.ingestion.dateFlipEnabled: TRUE | FALSE`
+
 ### January 12, 2023
 Added extension to transactions for delaying the response while the given arrangement is still being ingested
 This feature can be enabled/disabled with the configuration, the default is true:  
