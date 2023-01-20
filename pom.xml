@@ -9,7 +9,7 @@
   <packaging>pom</packaging>
 
   <name>Trexis :: Backbase :: Extensions</name>
-      
+
   <properties>
     <java.version>11</java.version>
     <maven.compiler.source>${java.version}</maven.compiler.source>
@@ -17,26 +17,20 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
   </properties>
-      
+
   <modules>
     <module>actions-extension</module>
     <module>arrangement-extension</module>
     <module>contact-manager-extension</module>
     <module>transaction-extension</module>
   </modules>
-      
+
   <distributionManagement>
-    <repository>
-      <id>finiteapi-releases</id>
-      <name>libs-release</name>
-      <url>https://finiteapi.jfrog.io/artifactory/libs-release-local</url>
-    </repository>
-            
-    <snapshotRepository>
-      <id>finiteapi-snapshots</id>
-      <name>libs-snapshots</name>
-      <url>https://finiteapi.jfrog.io/artifactory/libs-snapshots-local</url>
-    </snapshotRepository>
+      <repository>
+          <id>westerra-westerra</id>
+          <name>westerra-westerra</name>
+          <url>https://westerra-181741612687.d.codeartifact.us-east-2.amazonaws.com/maven/westerra/</url>
+      </repository>
   </distributionManagement>
-  
+
 </project>

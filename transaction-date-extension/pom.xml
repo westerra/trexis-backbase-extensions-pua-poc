@@ -3,10 +3,10 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>net.trexis.experts</groupId>
-    <artifactId>arrangement-extension</artifactId>
-    <version>1.0.5-SNAPSHOT</version>
-    <name>Trexis :: Backbase :: Arrangement Extension</name>
-    <description>Extension for arrangement-manager that is intended to be overlaid on the BackBase build artifact.</description>
+    <artifactId>transaction-date-extension</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <name>Trexis :: Backbase :: Transaction Date Extension</name>
+    <description>Extension for transaction-manager that is intended to be overlaid on the BackBase build artifact.</description>
 
     <properties>
         <java.version>11</java.version>
@@ -18,19 +18,10 @@
         <dbs.version>2022.01-LTS</dbs.version>
         <service-sdk.version>13.4.0</service-sdk.version>
 
-        <!-- treXis -->
-        <trexis-bom.version>1.0.1.LTS-SNAPSHOT</trexis-bom.version>
-
-        <!-- this version need to match the version of gson in the arrangement manager -->
-        <gson.version>2.8.9</gson.version>
-
         <!-- Code coverage -->
         <jacoco-maven.version>0.8.8</jacoco-maven.version>
-        <!-- JUnit 5 requires Surefire version 2.22.0 or higher -->
-        <maven-surefire-plugin.version>3.0.0-M7</maven-surefire-plugin.version>
         <jacoco.ut.execution.data.file>${project.build.directory}/coverage-reports/jacoco.exec</jacoco.ut.execution.data.file>
-        <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
-
+        <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco-ut/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
     </properties>
 
     <distributionManagement>
@@ -61,7 +52,7 @@
             <dependency>
                 <groupId>net.trexis.experts</groupId>
                 <artifactId>experts-bom</artifactId>
-                <version>${trexis-bom.version}</version>
+                <version>1.0.0.LTS-SNAPSHOT</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -71,8 +62,8 @@
     <dependencies>
         <!-- BACKBASE -->
         <dependency>
-            <groupId>com.backbase.dbs.arrangement</groupId>
-            <artifactId>arrangement-manager</artifactId>
+            <groupId>com.backbase.dbs.transaction</groupId>
+            <artifactId>transaction-manager</artifactId>
             <classifier>classes</classifier>
             <type>jar</type>
             <scope>provided</scope>
@@ -81,20 +72,6 @@
             <groupId>com.backbase.buildingblocks</groupId>
             <artifactId>service-sdk-starter-core</artifactId>
             <type>pom</type>
-        </dependency>
-
-        <!-- treXis -->
-        <dependency>
-            <groupId>net.trexis.experts</groupId>
-            <artifactId>finite-client</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-            <!-- this dependency resolves the transient inheritance when using this jar in the arrangement manager -->
-            <!-- this version need to match the version of gson in the arrangement manager -->
-            <version>${gson.version}</version>
         </dependency>
 
         <!--MISC-->
@@ -116,34 +93,10 @@
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
 
     <build>
         <plugins>
-            <!-- We output the follow jar's so that its available for the docker to put in the lib when repackaging arrangement manager docker -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.3.0</version>
-                <executions>
-                    <execution>
-                        <id>copy-dependencies</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>copy-dependencies</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.directory}/dependencies</outputDirectory>
-                            <overWriteReleases>false</overWriteReleases>
-                            <overWriteSnapshots>false</overWriteSnapshots>
-                            <overWriteIfNewer>true</overWriteIfNewer>
-                            <excludeGroupIds>com.backbase.dbs.arrangement</excludeGroupIds>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
@@ -167,7 +120,7 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <id>unpack-backbase-notifications-openapi-spec</id>
+                        <id>unpack-backbase-openapi-spec</id>
                         <phase>generate-sources</phase>
                         <goals>
                             <goal>unpack</goal>
@@ -224,28 +177,7 @@
                             <modelPackage>com.backbase.dbs.notifications.notification-service.v2.model</modelPackage>
                         </configuration>
                     </execution>
-                    <execution>
-                        <id>generate-arrangement-service-api</id>
-                        <goals>
-                            <goal>generate-rest-template-embedded</goal>
-                        </goals>
-                        <phase>generate-sources</phase>
-                        <configuration>
-                            <inputSpec>
-                                ${basedir}/src/main/resources/arrangement-service-api-v2.6.0.yaml
-                            </inputSpec>
-                            <apiPackage>com.backbase.dbs.arrangement.arrangement-manager.api.client.v2</apiPackage>
-                            <modelPackage>com.backbase.dbs.arrangement.arrangement-manager.v2.model</modelPackage>
-                        </configuration>
-                    </execution>
                 </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <!-- JUnit 5 requires Surefire version 2.22.0 or higher -->
-                <version>${maven-surefire-plugin.version}</version>
             </plugin>
 
             <!-- CODE COVERAGE -->
@@ -255,7 +187,9 @@
                 <version>${jacoco-maven.version}</version>
                 <configuration>
                     <excludes>
-                        <exclude>**/com/backbase/dbs/product/config/*</exclude>
+                        <exclude>**/com/backbase/dbs/**/*</exclude>
+                        <exclude>**/net/trexis/experts/boot/Application.class</exclude>
+                        <exclude>**/net/trexis/experts/boot/configuration/*.class</exclude>
                     </excludes>
                 </configuration>
                 <executions>

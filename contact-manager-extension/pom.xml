@@ -168,14 +168,9 @@
 
     <distributionManagement>
         <repository>
-            <id>finiteapi-releases</id>
-            <name>libs-release</name>
-            <url>https://finiteapi.jfrog.io/artifactory/libs-release-local</url>
+            <id>westerra-westerra</id>
+            <name>westerra-westerra</name>
+            <url>https://westerra-181741612687.d.codeartifact.us-east-2.amazonaws.com/maven/westerra/</url>
         </repository>
-        <snapshotRepository>
-            <id>finiteapi-snapshots</id>
-            <name>libs-snapshots</name>
-            <url>https://finiteapi.jfrog.io/artifactory/libs-snapshots-local</url>
-        </snapshotRepository>
     </distributionManagement>
 </project>
