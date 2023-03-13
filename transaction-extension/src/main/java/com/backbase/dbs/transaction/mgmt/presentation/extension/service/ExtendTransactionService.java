@@ -17,7 +17,9 @@ import com.backbase.dbs.transaction.mgmt.presentation.extension.config.Transacti
 import com.backbase.transaction.persistence.rest.spec.v2.transactions.TransactionItem;
 import com.backbase.transaction.persistence.rest.spec.v2.transactions.TransactionsGetResponseBody;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
@@ -50,6 +52,11 @@ public class ExtendTransactionService extends TransactionService {
     private final SecurityContextUtil securityContextUtil;
     private final ArrangementsApi arrangementsApi;
 
+    private final Comparator<TransactionItem> postedComparator;
+    private final Comparator<TransactionItem> pendingComparator;
+
+    private final Comparator<TransactionItem> sequenceNumberComparator;
+
     private static final String ORDER_BY_BOOKING_DATE = "bookingDate";
     private static final String BILLING_STATUS_BILLED = "BILLED";
     private static final String BILLING_STATUS_UNBILLED = "UNBILLED";
@@ -63,6 +70,21 @@ public class ExtendTransactionService extends TransactionService {
         this.cursorApi = cursorApi;
         this.securityContextUtil = securityContextUtil;
         this.arrangementsApi = arrangementsApi;
+
+        this.sequenceNumberComparator = Comparator.comparing((TransactionItem t) -> {
+            var externalIdSplit = t.getExternalId().split("-");
+            return externalIdSplit[externalIdSplit.length-1];
+        });
+
+        this.postedComparator = Comparator.comparing((TransactionItem t) -> Optional.ofNullable(t)
+                .map(TransactionItem::getAdditions).map(it -> it.get(transactionManagerAdditionOrderingConfig.getPostedAddition())).orElse(null),
+                Comparator.nullsFirst(Comparator.naturalOrder()))
+        .thenComparing(sequenceNumberComparator);
+
+        this.pendingComparator = Comparator.comparing((TransactionItem t) -> Optional.ofNullable(t)
+                .map(TransactionItem::getAdditions).map(it -> it.get(transactionManagerAdditionOrderingConfig.getPendingAddition())).orElse(null),
+                Comparator.nullsFirst(Comparator.naturalOrder()))
+        .thenComparing(sequenceNumberComparator);
     }
 
     @Override
@@ -146,37 +168,24 @@ public class ExtendTransactionService extends TransactionService {
 
             // If no billing statuses were sent as a parameter we want to sort/return all transactions
             // If it was provided, we only want to sort/return UNBILLED/PENDING if those were requested
-            if (parameterHolder.getBillingStatuses() == null || parameterHolder.getBillingStatuses() != null && parameterHolder.getBillingStatuses().contains(BILLING_STATUS_UNBILLED) || parameterHolder.getBillingStatuses().contains(BILLING_STATUS_PENDING)) {
+            if (parameterHolder.getBillingStatuses() == null || (parameterHolder.getBillingStatuses() != null && parameterHolder.getBillingStatuses().contains(BILLING_STATUS_UNBILLED) || parameterHolder.getBillingStatuses().contains(BILLING_STATUS_PENDING))) {
                 pendingTransactions = pendingTransactions.stream()
-                        .filter(it -> BILLING_STATUS_UNBILLED.equals(it.getBillingStatus()) || BILLING_STATUS_PENDING.equals(it.getBillingStatus()))
-                        .sorted(Comparator.comparing(t -> t.getAdditions().get(transactionManagerAdditionOrderingConfig.getPendingAddition())))
+                        .sorted(DIRECTION_DESCENDING.equals(parameterHolder.getDirection()) ? pendingComparator.reversed() : pendingComparator)
                         .collect(Collectors.toList());
-
-                if (DIRECTION_DESCENDING.equals(parameterHolder.getDirection())) {
-                    pendingTransactions = pendingTransactions.stream()
-                            .sorted(Comparator.comparing(t -> t.getAdditions().get(transactionManagerAdditionOrderingConfig.getPendingAddition()), Comparator.reverseOrder()))
-                            .collect(Collectors.toList());
-                }
 
                 response.getTransactionItems().addAll(pendingTransactions);
             }
 
-            if (parameterHolder.getBillingStatuses() == null || parameterHolder.getBillingStatuses() != null && parameterHolder.getBillingStatuses().contains(BILLING_STATUS_BILLED)) {
+            if (parameterHolder.getBillingStatuses() == null || (parameterHolder.getBillingStatuses() != null && parameterHolder.getBillingStatuses().contains(BILLING_STATUS_BILLED))) {
                 postedTransactions = postedTransactions.stream()
-                        .filter(it -> BILLING_STATUS_BILLED.equals(it.getBillingStatus()))
-                        .sorted(Comparator.comparing(t -> t.getAdditions().get(transactionManagerAdditionOrderingConfig.getPostedAddition())))
+                        .sorted(DIRECTION_DESCENDING.equals(parameterHolder.getDirection()) ? postedComparator.reversed() : postedComparator)
                         .collect(Collectors.toList());
-
-                if (DIRECTION_DESCENDING.equals(parameterHolder.getDirection())) {
-                    postedTransactions = postedTransactions.stream()
-                            .sorted(Comparator.comparing(t -> t.getAdditions().get(transactionManagerAdditionOrderingConfig.getPostedAddition()), Comparator.reverseOrder()))
-                            .collect(Collectors.toList());
-                }
 
                 response.getTransactionItems().addAll(postedTransactions);
             }
         }
 
+        log.info("externalId: {}", response.getTransactionItems().stream().map(TransactionItem::getExternalId));
         return response;
     }
 
