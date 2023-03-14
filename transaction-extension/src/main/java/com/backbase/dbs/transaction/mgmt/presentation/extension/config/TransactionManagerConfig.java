@@ -6,11 +6,28 @@ import org.springframework.context.annotation.Configuration;
 
 @Data
 @Configuration
-@ConfigurationProperties("transaction-extension.ingestion")
+@ConfigurationProperties("transaction-extension")
 public class TransactionManagerConfig {
-    private boolean enabled = true;
-    private int timeWaitSeconds = 15;
-    private int pollIntervalSeconds = 1;
-    private boolean continueAfterFailedCursorCheck = true;
-    private boolean dateFlipEnabled = false;
+
+    private Ingestion ingestion = new Ingestion();
+    private AdditionOrdering additionOrdering = new AdditionOrdering();
+
+    @Data
+    public static class Ingestion {
+
+        private boolean enabled = true;
+        private int timeWaitSeconds = 15;
+        private int pollIntervalSeconds = 1;
+        private boolean continueAfterFailedCursorCheck = true;
+        private boolean dateFlipEnabled = false;
+    }
+
+    @Data
+    public static class AdditionOrdering {
+
+        private boolean enabled = true;
+        private String postedAddition = "bookingDateTime";
+        private String pendingAddition = "createdDateTime";
+
+    }
 }

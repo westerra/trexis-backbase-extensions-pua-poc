@@ -4,103 +4,251 @@ import com.backbase.buildingblocks.backend.communication.context.OriginatorConte
 import com.backbase.buildingblocks.backend.communication.event.proxy.EventBus;
 import com.backbase.buildingblocks.backend.security.auth.config.SecurityContextUtil;
 import com.backbase.dbs.arrangement.client.v2.ArrangementsApi;
+import com.backbase.dbs.arrangement.client.v2.model.AccountArrangementItem;
+import com.backbase.dbs.arrangement.client.v2.model.AccountArrangementItems;
 import com.backbase.dbs.transaction.mgmt.persistence.domain.ParameterHolder;
 import com.backbase.dbs.transaction.mgmt.persistence.domain.Transaction;
+import com.backbase.dbs.transaction.mgmt.persistence.domain.TransactionEmbeddedAdditions;
 import com.backbase.dbs.transaction.mgmt.persistence.mapper.request.patch.TransactionPatchRequestMapper;
 import com.backbase.dbs.transaction.mgmt.persistence.mapper.request.post.TransacionPostRequestMapper;
 import com.backbase.dbs.transaction.mgmt.persistence.repository.SpecificationBuilder;
 import com.backbase.dbs.transaction.mgmt.persistence.repository.TransactionRepository;
-import com.backbase.dbs.transaction.mgmt.persistence.service.TransactionService;
 import com.backbase.dbs.transaction.mgmt.presentation.extension.config.TransactionManagerConfig;
 import com.backbase.transaction.persistence.rest.spec.v2.transactions.TransactionsGetResponseBody;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import javax.validation.Validator;
 import net.trexis.experts.cursor.cursor_service.api.client.v2.CursorApi;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationContext;
-import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.test.util.ReflectionTestUtils;
 
-import javax.validation.Validator;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class ExtendTransactionServiceTest {
 
+    public static final String CREATED_DATE_TIME = "createdDateTime";
+    public static final String BOOKING_DATE_TIME = "bookingDateTime";
     private static String ARR_1_ID = "ARR_1";
-    private static String ARR_1_EXT_ID = "ARR_EXT_1";
     private static String ARR_2_ID = "ARR_2";
-    private static String ARR_2_EXT_ID = "ARR_EXT_2";
 
+    @Mock
+    CursorApi cursorApi;
+    @Mock
+    SecurityContextUtil securityContextUtil;
+    @Mock
+    ArrangementsApi arrangementsApi;
+    @Mock
+    ApplicationContext applicationContext;
+    @Mock
+    EventBus eventBus;
+    @Mock
+    OriginatorContextUtil originatorContextUtil;
+    @Mock
+    Validator validator;
+    @Mock
+    TransacionPostRequestMapper transacionPostRequestMapper;
+    @Mock
+    TransactionPatchRequestMapper transactionPatchRequestMapper;
+    @Mock
+    SpecificationBuilder specificationBuilder;
+    @Mock
+    TransactionRepository transactionRepository;
+    @Mock
+    TransactionEmbeddedAdditions transaction;
+    @Mock
+    AccountArrangementItems accountArrangementItems;
 
-    @Test
-    void getTransactions_NoSubToken() {
-        CursorApi cursorApi = mock(CursorApi.class);
-        SecurityContextUtil securityContextUtil = mock(SecurityContextUtil.class);
-        ArrangementsApi arrangementsApi = mock(ArrangementsApi.class);
+    TransactionManagerConfig.Ingestion transactionManagerIngestionConfig;
+    TransactionManagerConfig.AdditionOrdering transactionManagerAdditionOrderingConfig;
 
-        //ToDo: figure out how to bypass super calls
-        ExtendTransactionService extendTransactionService = getService(cursorApi, securityContextUtil, arrangementsApi);
+    TransactionManagerConfig transactionManagerConfig;
 
-        ParameterHolder parameterHolder = new ParameterHolder();
-        //TransactionsGetResponseBody transactions = extendTransactionService.getTransactions(parameterHolder);
+    Page<Transaction> dbTransactions;
 
-        //No requests should go to arrangement api, as there was no subject in the token
-        //verify(arrangementsApi, times(0)).getArrangements(any(), any(), any());
-    }
+    ExtendTransactionService extendTransactionService;
 
-    @Test
-    void getTransactions_happyPath() {
-        CursorApi cursorApi = mock(CursorApi.class);
-        SecurityContextUtil securityContextUtil = mock(SecurityContextUtil.class);
-        ArrangementsApi arrangementsApi = mock(ArrangementsApi.class);
+    @BeforeEach
+    void setUp() {
+        transactionManagerConfig = new TransactionManagerConfig();
+        transactionManagerIngestionConfig = new TransactionManagerConfig.Ingestion();
+        transactionManagerIngestionConfig.setDateFlipEnabled(false);
+        transactionManagerIngestionConfig.setEnabled(false);
+        transactionManagerConfig.setIngestion(transactionManagerIngestionConfig);
 
-        //ToDo: figure out how to bypass super calls
-        ExtendTransactionService extendTransactionService = getService(cursorApi, securityContextUtil, arrangementsApi);
+        transactionManagerAdditionOrderingConfig = new TransactionManagerConfig.AdditionOrdering();
+        transactionManagerAdditionOrderingConfig.setEnabled(false);
+        transactionManagerAdditionOrderingConfig.setPendingAddition(CREATED_DATE_TIME);
+        transactionManagerAdditionOrderingConfig.setPostedAddition(BOOKING_DATE_TIME);
+        transactionManagerConfig.setAdditionOrdering(transactionManagerAdditionOrderingConfig);
 
-        ParameterHolder parameterHolder = new ParameterHolder();
-        parameterHolder.setArrangementIds(List.of(ARR_1_ID, ARR_2_ID));
-
-        when(securityContextUtil.getUserTokenClaim(any(), any()))
-                .thenReturn(Optional.of("mock_sub"));
-
-        //TransactionsGetResponseBody transactions = spyExtendTransactionService.getTransactions(parameterHolder);
-
-    }
-
-    private ExtendTransactionService getService(CursorApi cursorApi,
-                                                SecurityContextUtil securityContextUtil,
-                                                ArrangementsApi arrangementsApi){
-
-        //This is not working... fix it
-        TransactionRepository transactionRepository = mock(TransactionRepository.class);
-        Page<Transaction> transactionPage = new PageImpl<>(List.of());
-        when(transactionRepository.findAll((Example) any(), (Sort) any()))
-                .thenReturn(Collections.singletonList(transactionPage));
-
-        return new ExtendTransactionService(
-                mock(ApplicationContext.class),
+        extendTransactionService = new ExtendTransactionService(
+                applicationContext,
                 transactionRepository,
-                mock(EventBus.class),
-                mock(OriginatorContextUtil.class),
-                mock(Validator.class),
+                eventBus,
+                originatorContextUtil,
+                validator,
                 "",
                 Transaction.AdditionsMode.EMBEDDED_ADDITIONS,
-                mock(TransacionPostRequestMapper.class),
-                mock(TransactionPatchRequestMapper.class),
-                mock(SpecificationBuilder.class),
-                mock(TransactionManagerConfig.class),
+                transacionPostRequestMapper,
+                transactionPatchRequestMapper,
+                specificationBuilder,
+                transactionManagerConfig,
                 cursorApi,
                 securityContextUtil,
                 arrangementsApi
         );
-
+        ReflectionTestUtils.setField(extendTransactionService, "secondarySort", "sequenceNumber");
     }
+
+    @Test
+    void getTransactions_happyPath() {
+        // setup
+        setupTransactions("BILLED");
+
+        ParameterHolder parameterHolder = new ParameterHolder();
+        parameterHolder.setArrangementIds(List.of(ARR_1_ID, ARR_2_ID));
+        parameterHolder.setCheckSerialNumbers(List.of(1L));
+        parameterHolder.setDirection("DESC");
+        parameterHolder.setOrderBy("bookingDate");
+
+        // test
+        TransactionsGetResponseBody actual = extendTransactionService.getTransactions(parameterHolder);
+
+        // verify
+        // Nothing to verify, happy path
+    }
+
+    @Test
+    void getTransactions_additionOrdering_postedTransactionsShouldUseBookingDateTime() {
+        // setup
+        setupTransactions("BILLED");
+
+        accountArrangementItems.setArrangementElements(List.of(new AccountArrangementItem().id(ARR_1_ID)));
+        when(arrangementsApi.getArrangements(isNull(), anyList(), isNull()))
+                .thenReturn(accountArrangementItems);
+
+        transactionManagerIngestionConfig.setEnabled(true);
+        transactionManagerAdditionOrderingConfig.setEnabled(true);
+        transactionManagerConfig.setAdditionOrdering(transactionManagerAdditionOrderingConfig);
+        transactionManagerConfig.setIngestion(transactionManagerIngestionConfig);
+
+        extendTransactionService = new ExtendTransactionService(
+                applicationContext,
+                transactionRepository,
+                eventBus,
+                originatorContextUtil,
+                validator,
+                "",
+                Transaction.AdditionsMode.EMBEDDED_ADDITIONS,
+                transacionPostRequestMapper,
+                transactionPatchRequestMapper,
+                specificationBuilder,
+                transactionManagerConfig,
+                cursorApi,
+                securityContextUtil,
+                arrangementsApi
+        );
+        ReflectionTestUtils.setField(extendTransactionService, "secondarySort", "sequenceNumber");
+
+        // 1: descending posted
+        ParameterHolder parameterHolder = new ParameterHolder();
+        parameterHolder.setArrangementIds(List.of(ARR_1_ID));
+        parameterHolder.setDirection("DESC");
+        parameterHolder.setOrderBy("bookingDate");
+
+        when(securityContextUtil.getUserTokenClaim(anyString(), eq(String.class)))
+                .thenReturn(Optional.of("subValue"));
+
+        // test
+        TransactionsGetResponseBody actual = extendTransactionService.getTransactions(parameterHolder);
+
+        // verify
+        assertThat(actual.getTransactionItems(), hasSize(equalTo(3)));
+        assertThat(actual.getTransactionItems().get(0).getId(), equalTo("3"));
+        assertThat(actual.getTransactionItems().get(1).getId(), equalTo("2"));
+        assertThat(actual.getTransactionItems().get(2).getId(), equalTo("1"));
+
+        // 2: ascending posted
+        parameterHolder.setDirection("ASC");
+
+        actual = extendTransactionService.getTransactions(parameterHolder);
+
+        // verify
+        assertThat(actual.getTransactionItems(), hasSize(equalTo(3)));
+        assertThat(actual.getTransactionItems().get(0).getId(), equalTo("1"));
+        assertThat(actual.getTransactionItems().get(1).getId(), equalTo("2"));
+        assertThat(actual.getTransactionItems().get(2).getId(), equalTo("3"));
+
+        // 3: ascending pending
+        setupTransactions("PENDING");
+        parameterHolder.setDirection("ASC");
+
+        actual = extendTransactionService.getTransactions(parameterHolder);
+
+        // verify
+        assertThat(actual.getTransactionItems(), hasSize(equalTo(3)));
+        assertThat(actual.getTransactionItems().get(0).getId(), equalTo("3"));
+        assertThat(actual.getTransactionItems().get(1).getId(), equalTo("2"));
+        assertThat(actual.getTransactionItems().get(2).getId(), equalTo("1"));
+
+        // 3: descending pending
+        parameterHolder.setDirection("DESC");
+
+        actual = extendTransactionService.getTransactions(parameterHolder);
+
+        // verify
+        assertThat(actual.getTransactionItems(), hasSize(equalTo(3)));
+        assertThat(actual.getTransactionItems().get(0).getId(), equalTo("1"));
+        assertThat(actual.getTransactionItems().get(1).getId(), equalTo("2"));
+        assertThat(actual.getTransactionItems().get(2).getId(), equalTo("3"));
+    }
+
+    private void setupTransactions(String billingStatus) {
+        var transaction1 = new TransactionEmbeddedAdditions();
+        transaction1.setId("1");
+        transaction1.setAdditions(
+                Map.of("bookingDateTime", "2023-01-01T12:00:00", "createdDateTime", "2022-12-02T12:00:00"));
+        transaction1.setArrangementId(ARR_1_ID);
+        transaction1.setBillingStatus(billingStatus);
+
+        var transaction2 = new TransactionEmbeddedAdditions();
+        transaction2.setId("2");
+        transaction2.setAdditions(
+                Map.of("bookingDateTime", "2023-01-01T18:00:00", "createdDateTime", "2022-12-01T18:00:00"));
+        transaction2.setArrangementId(ARR_1_ID);
+        transaction2.setBillingStatus(billingStatus);
+
+        var transaction3 = new TransactionEmbeddedAdditions();
+        transaction3.setId("3");
+        transaction3.setAdditions(
+                Map.of("bookingDateTime", "2023-01-02T12:00:00", "createdDateTime", "2022-12-01T12:00:00"));
+        transaction3.setArrangementId(ARR_1_ID);
+        transaction3.setBillingStatus(billingStatus);
+
+        dbTransactions = new PageImpl<>(List.of(transaction1, transaction2, transaction3));
+
+        when(transactionRepository.findAll(ArgumentMatchers.isNull(Specification.class),
+                any(PageRequest.class))).thenReturn(dbTransactions);
+    }
+
 }
