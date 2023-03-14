@@ -41,6 +41,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -247,7 +248,7 @@ class ExtendTransactionServiceTest {
 
         dbTransactions = new PageImpl<>(List.of(transaction1, transaction2, transaction3));
 
-        when(transactionRepository.findAll(ArgumentMatchers.isNull(Specification.class),
+        when(transactionRepository.findAll(nullable(Specification.class),
                 any(PageRequest.class))).thenReturn(dbTransactions);
     }
 
