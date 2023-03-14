@@ -25,7 +25,7 @@ public class TransactionManagerConfig {
     @Data
     public static class AdditionOrdering {
 
-        private boolean enabled = true;
+        private boolean enabled = false;
         private String postedAddition = "bookingDateTime";
         private String pendingAddition = "createdDateTime";
 
