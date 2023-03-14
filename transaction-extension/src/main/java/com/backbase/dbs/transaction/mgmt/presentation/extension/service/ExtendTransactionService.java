@@ -45,7 +45,6 @@ import static net.trexis.experts.cursor.cursor_service.v2.model.Cursor.TypeEnum.
 @Service
 public class ExtendTransactionService extends TransactionService {
 
-    public static final String DIRECTION_DESCENDING = "DESC";
     private final TransactionManagerConfig.Ingestion transactionManagerIngestionConfig;
     private final TransactionManagerConfig.AdditionOrdering transactionManagerAdditionOrderingConfig;
     private final CursorApi cursorApi;
@@ -54,9 +53,9 @@ public class ExtendTransactionService extends TransactionService {
 
     private final Comparator<TransactionItem> postedComparator;
     private final Comparator<TransactionItem> pendingComparator;
-
     private final Comparator<TransactionItem> sequenceNumberComparator;
 
+    public static final String DIRECTION_DESCENDING = "DESC";
     private static final String ORDER_BY_BOOKING_DATE = "bookingDate";
     private static final String BILLING_STATUS_BILLED = "BILLED";
     private static final String BILLING_STATUS_UNBILLED = "UNBILLED";
