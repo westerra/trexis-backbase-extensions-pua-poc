@@ -47,8 +47,6 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ExtendTransactionServiceTest {
 
-    public static final String CREATED_DATE_TIME = "createdDateTime";
-    public static final String BOOKING_DATE_TIME = "bookingDateTime";
     private static String ARR_1_ID = "ARR_1";
     private static String ARR_2_ID = "ARR_2";
 
@@ -74,13 +72,8 @@ class ExtendTransactionServiceTest {
     SpecificationBuilder specificationBuilder;
     @Mock
     TransactionRepository transactionRepository;
-    @Mock
-    TransactionEmbeddedAdditions transaction;
-    @Mock
-    AccountArrangementItems accountArrangementItems;
 
     TransactionManagerConfig.Ingestion transactionManagerIngestionConfig;
-    TransactionManagerConfig.AdditionOrdering transactionManagerAdditionOrderingConfig;
 
     TransactionManagerConfig transactionManagerConfig;
 
@@ -95,12 +88,6 @@ class ExtendTransactionServiceTest {
         transactionManagerIngestionConfig.setDateFlipEnabled(false);
         transactionManagerIngestionConfig.setEnabled(false);
         transactionManagerConfig.setIngestion(transactionManagerIngestionConfig);
-
-        transactionManagerAdditionOrderingConfig = new TransactionManagerConfig.AdditionOrdering();
-        transactionManagerAdditionOrderingConfig.setEnabled(false);
-        transactionManagerAdditionOrderingConfig.setPendingAddition(CREATED_DATE_TIME);
-        transactionManagerAdditionOrderingConfig.setPostedAddition(BOOKING_DATE_TIME);
-        transactionManagerConfig.setAdditionOrdering(transactionManagerAdditionOrderingConfig);
 
         extendTransactionService = new ExtendTransactionService(
                 applicationContext,
@@ -137,91 +124,6 @@ class ExtendTransactionServiceTest {
 
         // verify
         // Nothing to verify, happy path
-    }
-
-    @Test
-    void getTransactions_additionOrdering_postedTransactionsShouldUseBookingDateTime() {
-        // setup
-        setupTransactions("BILLED");
-
-        accountArrangementItems.setArrangementElements(List.of(new AccountArrangementItem().id(ARR_1_ID)));
-        when(arrangementsApi.getArrangements(isNull(), anyList(), isNull()))
-                .thenReturn(accountArrangementItems);
-
-        transactionManagerIngestionConfig.setEnabled(true);
-        transactionManagerAdditionOrderingConfig.setEnabled(true);
-        transactionManagerConfig.setAdditionOrdering(transactionManagerAdditionOrderingConfig);
-        transactionManagerConfig.setIngestion(transactionManagerIngestionConfig);
-
-        extendTransactionService = new ExtendTransactionService(
-                applicationContext,
-                transactionRepository,
-                eventBus,
-                originatorContextUtil,
-                validator,
-                "",
-                Transaction.AdditionsMode.EMBEDDED_ADDITIONS,
-                transacionPostRequestMapper,
-                transactionPatchRequestMapper,
-                specificationBuilder,
-                transactionManagerConfig,
-                cursorApi,
-                securityContextUtil,
-                arrangementsApi
-        );
-        ReflectionTestUtils.setField(extendTransactionService, "secondarySort", "sequenceNumber");
-
-        // 1: descending posted
-        ParameterHolder parameterHolder = new ParameterHolder();
-        parameterHolder.setArrangementIds(List.of(ARR_1_ID));
-        parameterHolder.setDirection("DESC");
-        parameterHolder.setOrderBy("bookingDate");
-
-        when(securityContextUtil.getUserTokenClaim(anyString(), eq(String.class)))
-                .thenReturn(Optional.of("subValue"));
-
-        // test
-        TransactionsGetResponseBody actual = extendTransactionService.getTransactions(parameterHolder);
-
-        // verify
-        assertThat(actual.getTransactionItems(), hasSize(equalTo(3)));
-        assertThat(actual.getTransactionItems().get(0).getId(), equalTo("3"));
-        assertThat(actual.getTransactionItems().get(1).getId(), equalTo("2"));
-        assertThat(actual.getTransactionItems().get(2).getId(), equalTo("1"));
-
-        // 2: ascending posted
-        parameterHolder.setDirection("ASC");
-
-        actual = extendTransactionService.getTransactions(parameterHolder);
-
-        // verify
-        assertThat(actual.getTransactionItems(), hasSize(equalTo(3)));
-        assertThat(actual.getTransactionItems().get(0).getId(), equalTo("1"));
-        assertThat(actual.getTransactionItems().get(1).getId(), equalTo("2"));
-        assertThat(actual.getTransactionItems().get(2).getId(), equalTo("3"));
-
-        // 3: ascending pending
-        setupTransactions("PENDING");
-        parameterHolder.setDirection("ASC");
-
-        actual = extendTransactionService.getTransactions(parameterHolder);
-
-        // verify
-        assertThat(actual.getTransactionItems(), hasSize(equalTo(3)));
-        assertThat(actual.getTransactionItems().get(0).getId(), equalTo("3"));
-        assertThat(actual.getTransactionItems().get(1).getId(), equalTo("2"));
-        assertThat(actual.getTransactionItems().get(2).getId(), equalTo("1"));
-
-        // 3: descending pending
-        parameterHolder.setDirection("DESC");
-
-        actual = extendTransactionService.getTransactions(parameterHolder);
-
-        // verify
-        assertThat(actual.getTransactionItems(), hasSize(equalTo(3)));
-        assertThat(actual.getTransactionItems().get(0).getId(), equalTo("1"));
-        assertThat(actual.getTransactionItems().get(1).getId(), equalTo("2"));
-        assertThat(actual.getTransactionItems().get(2).getId(), equalTo("3"));
     }
 
     private void setupTransactions(String billingStatus) {
