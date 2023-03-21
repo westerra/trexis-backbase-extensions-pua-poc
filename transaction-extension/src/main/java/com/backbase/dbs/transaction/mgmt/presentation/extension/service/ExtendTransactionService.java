@@ -46,44 +46,17 @@ import static net.trexis.experts.cursor.cursor_service.v2.model.Cursor.TypeEnum.
 public class ExtendTransactionService extends TransactionService {
 
     private final TransactionManagerConfig.Ingestion transactionManagerIngestionConfig;
-    private final TransactionManagerConfig.AdditionOrdering transactionManagerAdditionOrderingConfig;
     private final CursorApi cursorApi;
     private final SecurityContextUtil securityContextUtil;
     private final ArrangementsApi arrangementsApi;
-
-    private final Comparator<TransactionItem> postedComparator;
-    private final Comparator<TransactionItem> pendingComparator;
-    private final Comparator<TransactionItem> sequenceNumberComparator;
-
-    public static final String DIRECTION_DESCENDING = "DESC";
-    private static final String ORDER_BY_BOOKING_DATE = "bookingDate";
-    private static final String BILLING_STATUS_BILLED = "BILLED";
-    private static final String BILLING_STATUS_UNBILLED = "UNBILLED";
-    private static final String BILLING_STATUS_PENDING = "PENDING";
 
     public ExtendTransactionService(ApplicationContext applicationContext, TransactionRepository transactionRepository, EventBus eventBus, OriginatorContextUtil originatorContextUtil, Validator validator, @Value("${backbase.api.extensions.classes.com.backbase.transaction.persistence.rest.spec.v2.transactions.TransactionsPostRequestBody:null}") String additionalDataConfig, @Value("${backbase.transaction.additions.mode:tableAdditions}") Transaction.AdditionsMode additionsMode, TransacionPostRequestMapper transactionPostRequestMapper, TransactionPatchRequestMapper transactionPatchRequestMapper, SpecificationBuilder specificationBuilder,
                                     TransactionManagerConfig transactionManagerConfig, CursorApi cursorApi, SecurityContextUtil securityContextUtil, ArrangementsApi arrangementsApi) {
         super(applicationContext, transactionRepository, eventBus, originatorContextUtil, validator, additionalDataConfig, additionsMode, transactionPostRequestMapper, transactionPatchRequestMapper, specificationBuilder);
         this.transactionManagerIngestionConfig = transactionManagerConfig.getIngestion();
-        this.transactionManagerAdditionOrderingConfig = transactionManagerConfig.getAdditionOrdering();
         this.cursorApi = cursorApi;
         this.securityContextUtil = securityContextUtil;
         this.arrangementsApi = arrangementsApi;
-
-        this.sequenceNumberComparator = Comparator.comparing((TransactionItem t) -> {
-            var externalIdSplit = t.getExternalId().split("-");
-            return externalIdSplit[externalIdSplit.length-1];
-        });
-
-        this.postedComparator = Comparator.comparing((TransactionItem t) -> Optional.ofNullable(t)
-                .map(TransactionItem::getAdditions).map(it -> it.get(transactionManagerAdditionOrderingConfig.getPostedAddition())).orElse(null),
-                Comparator.nullsFirst(Comparator.naturalOrder()))
-        .thenComparing(sequenceNumberComparator);
-
-        this.pendingComparator = Comparator.comparing((TransactionItem t) -> Optional.ofNullable(t)
-                .map(TransactionItem::getAdditions).map(it -> it.get(transactionManagerAdditionOrderingConfig.getPendingAddition())).orElse(null),
-                Comparator.nullsFirst(Comparator.naturalOrder()))
-        .thenComparing(sequenceNumberComparator);
     }
 
     @Override
@@ -153,36 +126,6 @@ public class ExtendTransactionService extends TransactionService {
                     arrangementCursor = getArrangementCursor(arrangementExternalId);
                 }
         });
-
-        if (ORDER_BY_BOOKING_DATE.equals(parameterHolder.getOrderBy()) && transactionManagerAdditionOrderingConfig.isEnabled()) {
-            var pendingTransactions = response.getTransactionItems().stream()
-                    .filter(it -> BILLING_STATUS_UNBILLED.equals(it.getBillingStatus()) || BILLING_STATUS_PENDING.equals(it.getBillingStatus()))
-                    .collect(Collectors.toList());
-
-            var postedTransactions = response.getTransactionItems().stream()
-                    .filter(it -> BILLING_STATUS_BILLED.equals(it.getBillingStatus()))
-                    .collect(Collectors.toList());
-
-            response.getTransactionItems().clear();
-
-            // If no billing statuses were sent as a parameter we want to sort/return all transactions
-            // If it was provided, we only want to sort/return UNBILLED/PENDING if those were requested
-            if (parameterHolder.getBillingStatuses() == null || (parameterHolder.getBillingStatuses() != null && parameterHolder.getBillingStatuses().contains(BILLING_STATUS_UNBILLED) || parameterHolder.getBillingStatuses().contains(BILLING_STATUS_PENDING))) {
-                pendingTransactions = pendingTransactions.stream()
-                        .sorted(DIRECTION_DESCENDING.equals(parameterHolder.getDirection()) ? pendingComparator.reversed() : pendingComparator)
-                        .collect(Collectors.toList());
-
-                response.getTransactionItems().addAll(pendingTransactions);
-            }
-
-            if (parameterHolder.getBillingStatuses() == null || (parameterHolder.getBillingStatuses() != null && parameterHolder.getBillingStatuses().contains(BILLING_STATUS_BILLED))) {
-                postedTransactions = postedTransactions.stream()
-                        .sorted(DIRECTION_DESCENDING.equals(parameterHolder.getDirection()) ? postedComparator.reversed() : postedComparator)
-                        .collect(Collectors.toList());
-
-                response.getTransactionItems().addAll(postedTransactions);
-            }
-        }
 
         log.info("externalId: {}", response.getTransactionItems().stream().map(TransactionItem::getExternalId));
         return response;
