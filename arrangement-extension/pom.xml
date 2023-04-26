@@ -2,9 +2,15 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <parent>
+        <groupId>net.trexis.experts</groupId>
+        <artifactId>trexis-backbase-extensions</artifactId>
+        <version>1.0.1-SNAPSHOT</version>
+    </parent>
+
     <groupId>net.trexis.experts</groupId>
     <artifactId>arrangement-extension</artifactId>
-    <version>1.0.5-SNAPSHOT</version>
+    <version>1.0.6-SNAPSHOT</version>
     <name>Trexis :: Backbase :: Arrangement Extension</name>
     <description>Extension for arrangement-manager that is intended to be overlaid on the BackBase build artifact.</description>
 
@@ -14,12 +20,12 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <lombok.version>1.18.12</lombok.version>
 
-        <boat.maven.plugin-version>0.14.4</boat.maven.plugin-version>
-        <dbs.version>2022.01-LTS</dbs.version>
-        <service-sdk.version>13.4.0</service-sdk.version>
+        <boat.maven.plugin-version>0.15.8</boat.maven.plugin-version>
+        <dbs.version>2022.08-LTS</dbs.version>
+        <service-sdk.version>14.2.0</service-sdk.version>
 
         <!-- treXis -->
-        <trexis-bom.version>1.0.1.LTS-SNAPSHOT</trexis-bom.version>
+        <trexis-bom.version>1.0.2-SNAPSHOT</trexis-bom.version>
 
         <!-- this version need to match the version of gson in the arrangement manager -->
         <gson.version>2.8.9</gson.version>
