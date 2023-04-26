@@ -5,12 +5,12 @@
     <parent>
         <groupId>net.trexis.experts</groupId>
         <artifactId>trexis-backbase-extensions</artifactId>
-        <version>1.0.0.2022.08-SNAPSHOT</version>
+        <version>1.0.1-SNAPSHOT</version>
     </parent>
 
     <groupId>net.trexis.experts</groupId>
     <artifactId>contact-manager-extension</artifactId>
-    <version>1.0.0.2022.08-SNAPSHOT</version>
+    <version>1.0.1-SNAPSHOT</version>
     <name>Trexis :: Backbase :: Contact Manager Extension</name>
     <description>Extension for dbs contact-manager that is intended to be overlaid on the BackBase build artifact.</description>
 
@@ -25,7 +25,7 @@
         <service-sdk.version>14.2.0</service-sdk.version>
 
         <!-- treXis -->
-        <trexis-bom.version>1.0.1.2022.08-SNAPSHOT</trexis-bom.version>
+        <trexis-bom.version>1.0.2-SNAPSHOT</trexis-bom.version>
 
         <!-- Code coverage -->
         <jacoco-maven.version>0.8.8</jacoco-maven.version>
