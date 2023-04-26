@@ -10,7 +10,7 @@
 
     <groupId>net.trexis.experts</groupId>
     <artifactId>actions-extension</artifactId>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>1.0.4-SNAPSHOT</version>
     <name>Trexis :: Backbase :: Actions Extension</name>
     <description>Extension for actions that is intended to be overlaid on the BackBase build artifact.</description>
 
