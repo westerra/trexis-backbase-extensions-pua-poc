@@ -15,11 +15,11 @@
     <description>Extension for transactions that is intended to be overlaid on the BackBase build artifact.</description>
 
     <properties>
-        <java.version>11</java.version>
+        <java.version>17</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
 
-        <lombok.version>1.18.22</lombok.version>
+        <lombok.version>1.18.24</lombok.version>
 
         <boat.maven.plugin-version>0.15.8</boat.maven.plugin-version>
 

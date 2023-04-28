@@ -10,7 +10,7 @@
   <name>Trexis :: Backbase :: Extensions</name>
       
   <properties>
-    <java.version>11</java.version>
+    <java.version>17</java.version>
     <maven.compiler.source>${java.version}</maven.compiler.source>
     <maven.compiler.target>${java.version}</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -18,10 +18,10 @@
 
     <trexis-bom.version>1.0.2-SNAPSHOT</trexis-bom.version>
 
-    <lombok.version>1.18.22</lombok.version>
+    <lombok.version>1.18.24</lombok.version>
     <boat.maven.plugin-version>0.15.8</boat.maven.plugin-version>
-    <dbs.version>2022.08-LTS</dbs.version>
-    <service-sdk.version>14.2.0</service-sdk.version>
+    <dbs.version>2023.02.18-LTS</dbs.version>
+    <service-sdk.version>15.2.0</service-sdk.version>
     <jacoco-maven.version>0.8.8</jacoco-maven.version>
 
   </properties>
