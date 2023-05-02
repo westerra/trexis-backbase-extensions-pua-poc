@@ -21,32 +21,49 @@ import net.trexis.experts.cursor.cursor_service.v2.model.Cursor;
 import net.trexis.experts.cursor.cursor_service.v2.model.CursorGetResponseBody;
 import org.joda.time.DateTime;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
+@ExtendWith(SpringExtension.class)
 class ExtendProductSummaryServiceTest {
 
-    private final ProductKindStorage productKindStorage = mock(ProductKindStorage.class);
-    private final ArrangementService arrangementService = mock(ArrangementService.class);
-    private final JwtContext jwtContext = mock(JwtContext.class);
-    private final AccessControlClient accessControlClient = mock(AccessControlClient.class);
-    private final ArrangementJpaRepository arrangementRepository = mock(ArrangementJpaRepository.class);
-    private final BalanceService balanceService = mock(BalanceService.class);
-    private final SecurityContextUtil securityContextUtil = mock(SecurityContextUtil.class);
-    private final CursorApi cursorApi = mock(CursorApi.class);
-    private final NotificationsApi notificationsApi = mock(NotificationsApi.class);
-    private final UserManagementApi userManagementApi = mock(UserManagementApi.class);
+    @Mock
+    private ProductKindStorage productKindStorage;
+    @Mock
+    private ArrangementService arrangementService;
+    @Mock
+    private JwtContext jwtContext;
+    @Mock
+    private AccessControlClient accessControlClient;
+    @Mock
+    private ArrangementJpaRepository arrangementRepository;
+    @Mock
+    private BalanceService balanceService;
+    @Mock
+    private SecurityContextUtil securityContextUtil;
+    @Mock
+    private CursorApi cursorApi;
+    @Mock
+    private NotificationsApi notificationsApi;
+    @Mock
+    private UserManagementApi userManagementApi;
 
     private Configurations configurations = new Configurations();
     private ProductSummaryConfig productSummaryConfig = new ProductSummaryConfig();
@@ -57,15 +74,19 @@ class ExtendProductSummaryServiceTest {
     private final String MOCK_LEGAL_ENTITY_ID = "mockLegalEntityId";
     private final String MOCK_INTERNAL_ARRANGEMENT_ID = "mockInternalArrangementId";
 
+    private AutoCloseable closeable;
+
     @BeforeEach
     void setup(){
+        closeable = MockitoAnnotations.openMocks(this);
         extendProductSummaryService = new ExtendProductSummaryService(
                 configurations, productKindStorage, arrangementService, jwtContext, accessControlClient, arrangementRepository, balanceService, securityContextUtil,
                 cursorApi, productSummaryConfig, notificationsApi, userManagementApi
         );
 
-        when(accessControlClient.getArrangementIdsByUserIdWithViewPrivilege(any(), any()))
+        when(accessControlClient.getArrangementIdsAccessibleByUser(any(), any(), any(), any(), any()))
                 .thenReturn(List.of(MOCK_INTERNAL_ARRANGEMENT_ID));
+
 
         when(securityContextUtil.getUserTokenClaim(any(), any()))
                 .thenReturn(Optional.of(MOCK_EXTERNAL_USER_ID));
@@ -73,8 +94,13 @@ class ExtendProductSummaryServiceTest {
         GetUser getUser = new GetUser();
         getUser.setExternalId(MOCK_EXTERNAL_USER_ID);
         getUser.setLegalEntityId(MOCK_LEGAL_ENTITY_ID);
-        when(userManagementApi.getUserByExternalIdWithHttpInfo(any(), any()))
+        lenient().when(userManagementApi.getUserByExternalIdWithHttpInfo(any(), any()))
                 .thenReturn(ResponseEntity.ok(getUser));
+    }
+
+    @AfterEach
+    void closeMocks() throws Exception {
+        closeable.close();
     }
 
     @Test
