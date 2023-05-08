@@ -34,7 +34,7 @@ jobs:
         type: string
 
     docker:
-      - image: 'cimg/openjdk:11.0'
+      - image: 'cimg/openjdk:17.0.0'
 
     steps:
       - attach_workspace:
