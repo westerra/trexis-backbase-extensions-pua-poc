@@ -2,24 +2,28 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <parent>
+        <groupId>net.trexis.experts</groupId>
+        <artifactId>trexis-backbase-extensions</artifactId>
+        <version>1.1.0-SNAPSHOT</version>
+    </parent>
+
     <groupId>net.trexis.experts</groupId>
     <artifactId>transaction-extension</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.1.0-SNAPSHOT</version>
     <name>Trexis :: Backbase :: Transaction Extension</name>
     <description>Extension for transactions that is intended to be overlaid on the BackBase build artifact.</description>
 
     <properties>
-        <java.version>11</java.version>
+        <java.version>17</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
 
-        <lombok.version>1.18.22</lombok.version>
+        <lombok.version>1.18.24</lombok.version>
 
-        <boat.maven.plugin-version>0.14.4</boat.maven.plugin-version>
-        <dbs.version>2022.01-LTS</dbs.version>
-        <service-sdk.version>13.4.0</service-sdk.version>
+        <boat.maven.plugin-version>0.15.8</boat.maven.plugin-version>
 
-        <trexis-bom.version>1.0.1.LTS-SNAPSHOT</trexis-bom.version>
+        <trexis-bom.version>1.1.0-SNAPSHOT</trexis-bom.version>
 
         <!-- Code coverage -->
         <jacoco-maven.version>0.8.8</jacoco-maven.version>
