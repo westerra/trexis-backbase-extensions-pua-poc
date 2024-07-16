@@ -16,11 +16,11 @@ import java.util.List;
 @Slf4j
 @RestController
 @Primary
-public class productSummaryController extends ProductSummaryApi {
+public class ProductSummaryController extends ProductSummaryApi {
 
     ProductSummaryServiceCustom productSummaryServiceCustom;
 
-    public productSummaryController(ApiClient apiClient) {
+    public ProductSummaryController(ApiClient apiClient) {
         super(apiClient);
     }
 
