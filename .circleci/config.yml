@@ -19,6 +19,8 @@ jobs:
         type: env_var_name
     steps:
       - gh/setup
+      - setup_remote_docker:
+          version: default      
       - gh/clone
       - run:
           command: |
@@ -39,7 +41,8 @@ jobs:
     steps:
       - attach_workspace:
           at: .
-
+      - setup_remote_docker:
+          version: default
       - checkout
       - aws-cli/install
 
