@@ -21,7 +21,7 @@
 
         <lombok.version>1.18.24</lombok.version>
 
-        <boat.maven.plugin-version>0.15.8</boat.maven.plugin-version>
+        <boat.maven.plugin-version>0.17.23</boat.maven.plugin-version>
 
         <trexis-bom.version>1.1.0-SNAPSHOT</trexis-bom.version>
 

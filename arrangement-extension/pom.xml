@@ -20,9 +20,7 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <lombok.version>1.18.24</lombok.version>
 
-        <boat.maven.plugin-version>0.15.8</boat.maven.plugin-version>
-        <dbs.version>2023.02.18-LTS</dbs.version>
-        <service-sdk.version>15.2.0</service-sdk.version>
+        <boat.maven.plugin-version>0.17.23</boat.maven.plugin-version>
 
         <!-- treXis -->
         <trexis-bom.version>1.1.0-SNAPSHOT</trexis-bom.version>
@@ -224,24 +222,10 @@
                         <phase>generate-sources</phase>
                         <configuration>
                             <inputSpec>
-                                ${basedir}/target/yaml/notification/notification-service-api-v2.0.10.yaml
+                                ${basedir}/target/yaml/notification/notification-service-api-v*.yaml
                             </inputSpec>
                             <apiPackage>com.backbase.dbs.notifications.notification-service.api.client.v2</apiPackage>
                             <modelPackage>com.backbase.dbs.notifications.notification-service.v2.model</modelPackage>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>generate-arrangement-service-api</id>
-                        <goals>
-                            <goal>generate-rest-template-embedded</goal>
-                        </goals>
-                        <phase>generate-sources</phase>
-                        <configuration>
-                            <inputSpec>
-                                ${basedir}/src/main/resources/arrangement-service-api-v2.6.0.yaml
-                            </inputSpec>
-                            <apiPackage>com.backbase.dbs.arrangement.arrangement-manager.api.client.v2</apiPackage>
-                            <modelPackage>com.backbase.dbs.arrangement.arrangement-manager.v2.model</modelPackage>
                         </configuration>
                     </execution>
                 </executions>

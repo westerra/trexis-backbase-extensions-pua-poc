@@ -147,7 +147,7 @@ public class Bai2ExportService {
                                    Totals accountTotals, 
                                    boolean isCredit,
                                    AccountArrangementItem account) {
-        int amount = new BigDecimal(t.getTransactionAmountCurrency().getAmount())
+        int amount = t.getTransactionAmountCurrency().getAmount()
             .multiply(HUNDRED)
             .setScale(0, RoundingMode.HALF_UP)
             .intValue();

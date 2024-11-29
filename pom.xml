@@ -20,14 +20,14 @@
 
     <lombok.version>1.18.24</lombok.version>
     <boat.maven.plugin-version>0.15.8</boat.maven.plugin-version>
-    <dbs.version>2023.02.18-LTS</dbs.version>
-    <service-sdk.version>15.2.0</service-sdk.version>
+    <dbs.version>2024.03-LTS</dbs.version>
+    <service-sdk.version>16.1.5</service-sdk.version>
     <jacoco-maven.version>0.8.8</jacoco-maven.version>
 
   </properties>
 
   <modules>
-    <module>actions-extension</module>
+<!--    <module>actions-extension</module>-->
     <module>arrangement-extension</module>
     <module>contact-manager-extension</module>
     <module>transaction-extension</module>

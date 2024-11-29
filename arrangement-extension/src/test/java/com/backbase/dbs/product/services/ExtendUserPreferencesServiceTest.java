@@ -1,6 +1,5 @@
 package com.backbase.dbs.product.services;
 
-import com.backbase.dbs.arrangement.arrangement_manager.v2.model.AccountArrangementItem;
 import com.backbase.dbs.product.AliasConfiguration;
 import com.backbase.dbs.product.AliasJourney;
 import com.backbase.dbs.product.Configurations;
@@ -30,7 +29,6 @@ class ExtendUserPreferencesServiceTest {
     private final UserPreferencesService userPreferencesService = mock(UserPreferencesService.class);
     private final ArrangementJpaRepository arrangementRepository = mock(ArrangementJpaRepository.class);
 
-    private final CommonBackbaseService backbaseService = mock(CommonBackbaseService.class);
     private final CommonFiniteService finiteService = mock(CommonFiniteService.class);
 
     private Configurations configurations = new Configurations();
@@ -45,6 +43,7 @@ class ExtendUserPreferencesServiceTest {
     void setup(){
         AliasConfiguration aliasConfiguration = new AliasConfiguration();
         aliasConfiguration.setJourney(AliasJourney.USER_ALIAS);
+        aliasConfiguration.postConstruct();
         configurations.setAlias(aliasConfiguration);
 
         when(arrangementRepository.findByIdAndNotDeleted(any())).thenReturn(Optional.of(new Arrangement()));
@@ -54,7 +53,7 @@ class ExtendUserPreferencesServiceTest {
 
         extendUserPreferencesService = new ExtendUserPreferencesService(
                 jwtContext, accessControlClient, userPreferencesService, arrangementRepository, configurations,
-                productArrangementConfig, backbaseService,finiteService
+                productArrangementConfig,finiteService
         );
     }
 
@@ -83,8 +82,6 @@ class ExtendUserPreferencesServiceTest {
 
     @Test
     void updateUserPreferences_happyPath_aliasOnly_syncEnabled() {
-        when(backbaseService.getArrangementsById(any()))
-                .thenReturn(new AccountArrangementItem().externalArrangementId(MOCK_EXTERNAL_ARRANGEMENT_ID));
 
         //Enable sync
         productArrangementConfig.setSyncAliasToCore(true);

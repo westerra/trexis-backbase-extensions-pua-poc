@@ -18,7 +18,8 @@ import com.backbase.transaction.persistence.rest.spec.v2.transactions.Transactio
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import javax.validation.Validator;
+
+import jakarta.validation.Validator;
 import net.trexis.experts.cursor.cursor_service.api.client.v2.CursorApi;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

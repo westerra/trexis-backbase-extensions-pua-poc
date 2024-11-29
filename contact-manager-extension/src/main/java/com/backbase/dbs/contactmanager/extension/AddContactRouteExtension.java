@@ -1,7 +1,6 @@
 package com.backbase.dbs.contactmanager.extension;
 
 import com.backbase.buildingblocks.backend.communication.extension.annotations.BehaviorExtension;
-import com.backbase.buildingblocks.backend.communication.extension.annotations.PostHook;
 import com.backbase.buildingblocks.backend.communication.extension.annotations.PreHook;
 import com.backbase.buildingblocks.backend.security.auth.config.SecurityContextUtil;
 import com.backbase.buildingblocks.presentation.errors.BadRequestException;
@@ -11,16 +10,12 @@ import com.backbase.dbs.contactmanager.contact.dto.Contact;
 import com.backbase.dbs.contactmanager.contact.dto.InternalRequestWrapper;
 import com.backbase.dbs.contactmanager.contact.route.CreateContactRouteBuilder;
 import com.backbase.dbs.contactmanager.extension.config.ContactManagerExtensionConfiguration;
-import com.backbase.dbs.contactmanager.rest.spec.client.v2.model.ContactsPostRequestBody;
 import com.finite.api.EntityApi;
 import com.finite.api.model.EntityProfile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.internal.Internal;
 import org.apache.camel.Exchange;
 import org.codehaus.plexus.util.StringUtils;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 

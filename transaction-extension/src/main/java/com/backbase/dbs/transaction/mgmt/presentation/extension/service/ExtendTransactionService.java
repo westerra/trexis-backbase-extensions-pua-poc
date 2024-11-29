@@ -16,12 +16,7 @@ import com.backbase.dbs.transaction.mgmt.persistence.service.TransactionService;
 import com.backbase.dbs.transaction.mgmt.presentation.extension.config.TransactionManagerConfig;
 import com.backbase.transaction.persistence.rest.spec.v2.transactions.TransactionItem;
 import com.backbase.transaction.persistence.rest.spec.v2.transactions.TransactionsGetResponseBody;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import jakarta.validation.Validator;
 import lombok.extern.slf4j.Slf4j;
 import net.trexis.experts.cursor.cursor_service.api.client.v2.CursorApi;
 import net.trexis.experts.cursor.cursor_service.v2.model.Cursor;
@@ -31,7 +26,6 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.validation.Validator;
 import java.util.List;
 
 import static java.lang.Thread.sleep;

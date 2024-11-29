@@ -17,7 +17,7 @@ import com.backbase.dbs.product.repository.ArrangementJpaRepository;
 import com.backbase.dbs.product.summary.ProductSummary;
 import com.backbase.dbs.product.summary.ProductSummaryFilter;
 import com.backbase.dbs.product.summary.ProductSummaryService;
-import com.backbase.dbs.user.api.client.v2.UserManagementApi;
+import com.backbase.dbs.product.clients.user.manager.api.UserManagementClientApi;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -49,7 +49,7 @@ public class ExtendProductSummaryService extends ProductSummaryService {
     private final CursorApi cursorApi;
     private final NotificationsApi notificationsApi;
     private final ProductSummaryConfig productSummaryConfig;
-    private final UserManagementApi userManagementApi;
+    private final UserManagementClientApi userManagementApi;
 
     public ExtendProductSummaryService(Configurations configurations,
             ProductKindStorage productKindStorage,
@@ -62,7 +62,7 @@ public class ExtendProductSummaryService extends ProductSummaryService {
             CursorApi cursorApi,
             ProductSummaryConfig productSummaryConfig,
             NotificationsApi notificationsApi,
-            UserManagementApi userManagementApi) {
+            UserManagementClientApi userManagementApi) {
         super(configurations, productKindStorage, arrangementService, jwtContext, accessControlClient, arrangementRepository, balanceService);
         this.securityContextUtil = securityContextUtil;
         this.cursorApi = cursorApi;
@@ -168,8 +168,7 @@ public class ExtendProductSummaryService extends ProductSummaryService {
 
             var notificationResponse = notificationsApi.postNotificationsWithHttpInfo(requestBody);
             if (notificationResponse.getStatusCode().isError()) {
-                log.error("Exception while notifying user with legal entity id {} of ingestion still in progress timed out {}",
-                        internalLegalEntityId);
+                log.error("Exception while notifying user with legal entity id {} of ingestion still in progress timed out {}", internalLegalEntityId);
             }
         } catch (RuntimeException ex) {
             log.error(String.format("Exception while notifying user with external id %s of ingestion still in progress timed out",

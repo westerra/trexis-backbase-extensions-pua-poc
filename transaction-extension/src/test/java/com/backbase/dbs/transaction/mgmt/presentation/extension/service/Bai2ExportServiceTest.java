@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -212,7 +213,7 @@ class Bai2ExportServiceTest {
         .description(part[5])
         .typeGroup(part[6])
         .type(part[7])
-        .transactionAmountCurrency(new Currency().amount(part[11]).currencyCode(part[12]))
+        .transactionAmountCurrency(new Currency().amount(new BigDecimal(part[11])).currencyCode(part[12]))
         .creditDebitIndicator(CreditDebitIndicator.valueOf(part[13]));
     }
 

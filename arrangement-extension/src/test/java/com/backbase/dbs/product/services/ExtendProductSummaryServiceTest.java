@@ -10,12 +10,11 @@ import com.backbase.dbs.product.arrangement.ArrangementService;
 import com.backbase.dbs.product.balance.BalanceService;
 import com.backbase.dbs.product.clients.AccessControlClient;
 import com.backbase.dbs.product.clients.JwtContext;
+import com.backbase.dbs.product.clients.user.manager.model.GetUserClientDto;
 import com.backbase.dbs.product.config.ProductSummaryConfig;
 import com.backbase.dbs.product.repository.ArrangementJpaRepository;
 import com.backbase.dbs.product.summary.ProductSummaryFilter;
-import com.backbase.dbs.user.api.client.v2.UserManagementApi;
-import com.backbase.dbs.user.api.client.v2.model.GetUser;
-import liquibase.pro.packaged.G;
+import com.backbase.dbs.product.clients.user.manager.api.UserManagementClientApi;
 import net.trexis.experts.cursor.cursor_service.api.client.v2.CursorApi;
 import net.trexis.experts.cursor.cursor_service.v2.model.Cursor;
 import net.trexis.experts.cursor.cursor_service.v2.model.CursorGetResponseBody;
@@ -63,7 +62,7 @@ class ExtendProductSummaryServiceTest {
     @Mock
     private NotificationsApi notificationsApi;
     @Mock
-    private UserManagementApi userManagementApi;
+    private UserManagementClientApi userManagementApi;
 
     private Configurations configurations = new Configurations();
     private ProductSummaryConfig productSummaryConfig = new ProductSummaryConfig();
@@ -91,7 +90,7 @@ class ExtendProductSummaryServiceTest {
         when(securityContextUtil.getUserTokenClaim(any(), any()))
                 .thenReturn(Optional.of(MOCK_EXTERNAL_USER_ID));
 
-        GetUser getUser = new GetUser();
+        GetUserClientDto getUser = new GetUserClientDto();
         getUser.setExternalId(MOCK_EXTERNAL_USER_ID);
         getUser.setLegalEntityId(MOCK_LEGAL_ENTITY_ID);
         lenient().when(userManagementApi.getUserByExternalIdWithHttpInfo(any(), any()))
